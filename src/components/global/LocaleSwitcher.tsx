@@ -44,7 +44,7 @@ export default function LocaleSwitcher() {
 
   const localeMapping = [
     { code: 'en', name: 'English' },
-    { code: 'zh', name: '中文' },
+    { code: 'vi', name: 'Tiếng Việt' },
   ]
 
   return (

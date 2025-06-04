@@ -1,5 +1,5 @@
 const i18nConfig = {
-  locales: ['en', 'zh'],
+  locales: ['en', 'vi'],
   defaultLocale: process.env.NEXT_PUBLIC_LOCALE_DEFAULT || 'en',
   prefixDefault: false,
 }

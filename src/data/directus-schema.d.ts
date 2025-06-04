@@ -73,6 +73,7 @@ import {
   Team,
   Testimonials,
 } from '@/data/directus-collections'
+import { CustomDirectusTypes } from './directus-collections'
 
 export interface FormSchema {
   name: string
@@ -98,83 +99,4 @@ export interface SocialLink {
   url: string
 }
 
-// as directus sdk root definition
-
-export interface DirectusSchema {
-  block_cardgroup: BlockCardgroup[]
-  block_cardgroup_cards: BlockCardgroupCards[]
-  block_cardgroup_posts: BlockCardgroupPosts[]
-  block_columns: BlockColumns[]
-  block_columns_rows: BlockColumnsRows[]
-  block_cta: BlockCta[]
-  block_faqs: BlockFaqs[]
-  block_features: BlockFeatures[]
-  block_form: BlockForm[]
-  block_gallery: BlockGallery[]
-  block_gallery_files: BlockGalleryFiles[]
-  block_hero: BlockHero[]
-  block_html: BlockHtml[]
-  block_logocloud: BlockLogocloud[]
-  block_logocloud_files: BlockLogocloudFiles[]
-  block_quote: BlockQuote[]
-  block_richtext: BlockRichtext[]
-  block_steps: BlockSteps[]
-  block_steps_items: BlockStepsItems[]
-  block_team: BlockTeam[]
-  block_testimonials: BlockTestimonials[]
-  block_testimonials_items: BlockTestimonialsItems[]
-  block_video: BlockVideo[]
-  blog_settings: BlogSettings[]
-  categories: Categories[]
-  chat_config: ChatConfig
-  conversations: Conversations[]
-  directus_activity: DirectusActivity[]
-  directus_collections: DirectusCollections[]
-  directus_dashboards: DirectusDashboards[]
-  directus_fields: DirectusFields[]
-  directus_files: DirectusFiles[]
-  directus_flows: DirectusFlows[]
-  directus_folders: DirectusFolders[]
-  directus_migrations: DirectusMigrations[]
-  directus_notifications: DirectusNotifications[]
-  directus_operations: DirectusOperations[]
-  directus_panels: DirectusPanels[]
-  directus_permissions: DirectusPermissions[]
-  directus_presets: DirectusPresets[]
-  directus_relations: DirectusRelations[]
-  directus_revisions: DirectusRevisions[]
-  directus_roles: DirectusRoles[]
-  directus_sessions: DirectusSessions[]
-  directus_settings: DirectusSettings[]
-  directus_shares: DirectusShares[]
-  directus_translations: DirectusTranslations[]
-  directus_users: DirectusUsers[]
-  directus_webhooks: DirectusWebhooks[]
-  events: Events[]
-  forms: Forms[]
-  globals: Globals
-  globals_translations: GlobalsTranslations[]
-  help_articles: HelpArticles[]
-  help_articles_translations: HelpArticlesTranslations[]
-  help_collections: HelpCollections[]
-  help_collections_translations: HelpCollectionsTranslations[]
-  help_feedback: HelpFeedback[]
-  inbox: Inbox[]
-  languages: Languages[]
-  messages: Messages[]
-  metrics: Metrics[]
-  navigation: Navigation[]
-  navigation_items: NavigationItems[]
-  pages: Pages[]
-  pages_translations: PagesTranslations[]
-  pages_translations_blocks: PagesTranslationsBlocks[]
-  posts: Posts[]
-  posts_translations: PostsTranslations[]
-  projects: Projects[]
-  projects_files: ProjectsFiles[]
-  projects_settings: ProjectsSettings[]
-  redirects: Redirects[]
-  seo: Seo[]
-  team: Team[]
-  testimonials: Testimonials[]
-}
+export type DirectusSchema = CustomDirectusTypes

@@ -5,29 +5,29 @@ import { MetadataRoute } from 'next'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // const pages = [
-  //     {
-  //       slug: 'page-1',
-  //       title: 'page 1',
-  //       translations: [
-  //         {
-  //           language_code: 'zh',
-  //           content: '中文内容',
-  //         },
-  //         { language_code: 'en', content: 'EnglishContent' },
-  //       ],
-  //     },
-  //     {
-  //       slug: 'page-2',
-  //       title: 'page 2',
-  //       translations: [
-  //         {
-  //           language_code: 'zh',
-  //           content: '中文内容',
-  //         },
-  //         { language_code: 'en', content: 'EnglishContent' },
-  //       ],
-  //     },
-  //   ]
+  //   {
+  //     slug: 'page-1',
+  //     title: 'page 1',
+  //     translations: [
+  //       {
+  //         language_code: 'vi',
+  //         content: 'Nội dung tiếng Việt',
+  //       },
+  //       { language_code: 'en', content: 'EnglishContent' },
+  //     ],
+  //   },
+  //   {
+  //     slug: 'page-2',
+  //     title: 'page 2',
+  //     translations: [
+  //       {
+  //         language_code: 'vi',
+  //         content: 'Nội dung tiếng Việt',
+  //       },
+  //       { language_code: 'en', content: 'EnglishContent' },
+  //     ],
+  //   },
+  // ];
 
   const injectLangCode = (lang: string | any): string => {
     const isDefaultLocale =

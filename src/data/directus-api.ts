@@ -18,6 +18,7 @@ import {
   Posts,
 } from '@/data/directus-collections'
 import { DirectusSchema } from '@/data/directus-schema'
+import { cache } from 'react'
 
 const withRequestCallback = function <Schema extends object, Output>(
   onRequest: RequestTransformer,
@@ -68,10 +69,47 @@ const directusApi = createDirectus<DirectusSchema>(getDirectusURL())
 
 directusApi.setToken(process.env.DIRECTUS_ADMIN_TOKEN || '')
 
-const fetchGlobals = async function name(lang: string) {
-  return (await directusApi.request(
+// Cache the getSite function to prevent multiple calls
+const getSite = cache(async (slug: string) => {
+  console.log('[getSite] Fetching site with slug:', slug)
+  
+  // Skip if slug is default
+  if (slug === 'default') {
+    console.log('[getSite] Skipping fetch for default slug')
+    return null
+  }
+
+  const sites = await directusApi.request(
     withRevalidate(
-      readSingleton('globals', {
+      readItems('sites', {
+        filter: {
+          slug: {
+            _eq: slug
+          }
+        },
+        fields: ['*'],
+        limit: 1
+      }),
+      60
+    )
+  )
+  
+  console.log('[getSite] Found site:', JSON.stringify(sites[0], null, 2))
+  return sites[0]
+})
+
+const fetchGlobals = async function name(slug: string, lang: string) {
+  const site = await getSite(slug)
+  if (!site) return null
+
+  const globals = await directusApi.request(
+    withRevalidate(
+      readItems('globals', {
+        filter: {
+          site_id: {
+            _eq: site.id
+          }
+        },
         deep: {
           translations: {
             _filter: {
@@ -91,45 +129,113 @@ const fetchGlobals = async function name(lang: string) {
             ],
           },
         ],
+        limit: 1
       }),
       60
     )
-  )) as Globals
+  )
+  
+  return globals[0] as Globals
 }
 
-const fetchNavigationSafe = async function name(slug: string, lang: string) {
+const fetchNavigationSafe = async function name(slug: string, lang: string, type: 'main' | 'footer' = 'main') {
+  console.log('\n=== Fetch Navigation ===')
+  console.log('Site slug:', slug)
+  console.log('Navigation type:', type)
+  
+  const site = await getSite(slug)
+  if (!site) {
+    console.log('❌ No site found')
+    return null
+  }
+
+  // Get navigation ID from site
+  const navigationId = type === 'main' ? site.navigation[1] : site.navigation[0]
+  console.log('Navigation ID:', navigationId)
+
   const navigations = await directusApi.request(
     withRevalidate(
       readItems('navigation', {
         limit: 1,
         filter: {
-          language: {
-            code: {
-              _eq: lang,
-            },
+          id: {
+            _eq: navigationId
           },
-          slug: {
-            _eq: slug,
-          },
+          status: {
+            _eq: 'published'
+          }
         },
         fields: [
-          '*',
+          'id',
+          'status',
           {
             items: [
-              '*',
-              { page: ['slug'] },
-              { children: ['*', { page: ['slug'] }] },
-            ],
-            language: ['code'],
-          },
-          {},
+              'id',
+              'type',
+              'title',
+              {
+                translations: [
+                  'languages_code',
+                  'title'
+                ]
+              },
+              'url',
+              'has_children',
+              'open_in_new_tab',
+              'sort',
+              {
+                page: [
+                  'id',
+                  {
+                    translations: [
+                      'languages_code',
+                      'title',
+                      'permalink'
+                    ]
+                  }
+                ]
+              },
+              {
+                children: [
+                  'id',
+                  'title',
+                  'type',
+                  'url',
+                  'open_in_new_tab',
+                  {
+                    page: [
+                      'id',
+                      {
+                        translations: [
+                          'languages_code',
+                          'title',
+                          'permalink'
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
         ],
       }),
       60
     )
   )
-  //@ts-ignore
-  return navigations[0] as Navigation
+
+  if (!navigations[0]) {
+    console.log('❌ No navigation found')
+    return null
+  }
+
+  console.log('✅ Navigation found:', {
+    id: navigations[0].id,
+    items: navigations[0].items?.length || 0
+  })
+
+  console.dir(navigations[0].items, { depth: null })
+  return navigations[0]
 }
 
 const fetchForm = async function (id: string, languages_code?: string) {
@@ -303,7 +409,103 @@ async function fetchHelpArticle(
   return articles[0] as HelpArticles
 }
 
+async function fetchPage(slug: string, lang: string) {
+  console.log('\n=== Fetch Page ===')
+  console.log('Site slug:', slug)
+  console.log('Language:', lang)
+  
+  const site = await getSite(slug)
+  if (!site) {
+    console.log('❌ No site found')
+    return null
+  }
+
+  const pages = await directusApi.request(
+    withRevalidate(
+      readItems('pages', {
+        filter: {
+          site_id: {
+            _eq: site.id
+          }
+        },
+        fields: [
+          'id',
+          'status',
+          'site_id',
+          'blocks',
+          { seo: ['*'] },
+          {
+            translations: [
+              '*',
+              {
+                blocks: [
+                  'collection',
+                  {
+                    item: {
+                      block_hero: ['*'],
+                      block_faqs: ['*'],
+                      block_features: ['*'],
+                      block_quote: ['*'],
+                      block_columns: ['*', { rows: ['*'] }],
+                      block_form: ['*', { form: ['*'] }],
+                      block_testimonials: [
+                        '*',
+                        { testimonials: ['*', { testimonial: ['*'] }] },
+                      ],
+                      block_logocloud: ['*', { logos: [{ file: ['*'] }] }],
+                      block_team: ['*'],
+                      block_cta: ['*'],
+                      block_richtext: ['*'],
+                      block_steps: ['*', { steps: ['*'] }],
+                      block_gallery: [
+                        '*',
+                        { gallery_items: ['*', { directus_files_id: ['*'] }] },
+                      ],
+                      block_cardgroup: [
+                        '*',
+                        { posts: [{ posts_id: ['*', { translations: ['*'] }] }] },
+                      ],
+                      block_html: ['*'],
+                      block_video: ['*'],
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        deep: {
+          translations: {
+            _filter: {
+              languages_code: {
+                _eq: lang,
+              },
+            },
+          },
+        },
+        limit: 1,
+      }),
+      60
+    )
+  )
+
+  if (!pages[0]) {
+    console.log('❌ No page found')
+    return null
+  }
+
+  console.log('✅ Page found:', {
+    id: pages[0].id,
+    blocks: pages[0].blocks?.length || 0,
+    translations: pages[0].translations?.length || 0
+  })
+  return pages[0]
+}
+
 async function fetchPost(slug: string, lang: string) {
+  const site = await getSite(slug)
+  if (!site) return null
+
   const posts = await directusApi.request(
     readItems('posts', {
       deep: {
@@ -315,7 +517,10 @@ async function fetchPost(slug: string, lang: string) {
           },
         },
       },
-      filter: { slug: { _eq: slug } },
+      filter: { 
+        slug: { _eq: slug },
+        site_id: { _eq: site.id }
+      },
       limit: 1,
       fields: [
         '*',
@@ -330,72 +535,6 @@ async function fetchPost(slug: string, lang: string) {
   if (posts.length === 0) return null
 
   return posts[0] as Posts
-}
-
-async function fetchPage(slug: string, lang: string) {
-  const pages = await directusApi.request(
-    readItems('pages', {
-      filter: {
-        slug: { _eq: slug },
-      },
-      deep: {
-        translations: {
-          _filter: {
-            languages_code: {
-              _eq: lang,
-            },
-          },
-        },
-      },
-      fields: [
-        '*',
-        { seo: ['*'] },
-        {
-          translations: [
-            '*',
-            {
-              blocks: [
-                'collection',
-                {
-                  item: {
-                    block_hero: ['*'],
-                    block_faqs: ['*'],
-                    block_features: ['*'],
-                    block_quote: ['*'],
-                    block_columns: ['*', { rows: ['*'] }],
-                    block_form: ['*', { form: ['*'] }],
-                    block_testimonials: [
-                      '*',
-                      { testimonials: ['*', { testimonial: ['*'] }] },
-                    ],
-                    block_logocloud: ['*', { logos: [{ file: ['*'] }] }],
-                    block_team: ['*'],
-                    block_cta: ['*'],
-                    block_richtext: ['*'],
-                    block_steps: ['*', { steps: ['*'] }],
-                    block_gallery: [
-                      '*',
-                      { gallery_items: ['*', { directus_files_id: ['*'] }] },
-                    ],
-                    block_cardgroup: [
-                      '*',
-                      { posts: [{ posts_id: ['*', { translations: ['*'] }] }] },
-                    ],
-                    block_html: ['*'],
-                    block_video: ['*'],
-                  },
-                },
-              ],
-            },
-          ],
-        },
-      ],
-      limit: 1,
-    })
-  )
-
-  // @ts-ignore
-  return pages[0] as Pages
 }
 
 export default directusApi

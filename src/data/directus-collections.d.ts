@@ -582,6 +582,7 @@ export interface Globals {
   umami_script_url?: string
   google_analytics_id?: string
   baidu_analytics_id?: string
+  site_id?: string
 }
 
 export interface GlobalsTranslations {
@@ -704,33 +705,26 @@ export interface Metrics {
 }
 
 export interface Navigation {
-  date_created?: string
-  date_updated?: string
   id: string
-  items: NavigationItems[]
-  language?: string | Languages
-  slug: string
   status: string
-  title: string
-  user_created?: string | DirectusUsers
-  user_updated?: string | DirectusUsers
+  items: NavigationItem[]
+  type: 'main' | 'footer'
 }
 
 export interface NavigationItems {
-  children?: NavigationItems[]
-  display_details: string
-  has_children?: boolean
-  icon?: string
   id: string
+  title: string
+  type?: 'page' | 'url'
+  icon?: string
   label?: string
-  navigation?: string | Navigation
+  url?: string
+  has_children?: boolean
   open_in_new_tab?: boolean
+  sort?: number
+  navigation?: string | Navigation
   page?: string | Pages
   parent?: string | NavigationItems
-  sort?: number
-  title?: string
-  type?: string
-  url?: string
+  children?: NavigationItems[]
 }
 
 export interface Pages {
@@ -883,6 +877,17 @@ export interface Testimonials {
   user_updated?: string | DirectusUsers
 }
 
+export interface Sites {
+  id: number
+  slug: string
+  title?: string
+  status?: 'published' | 'draft' | 'archived'
+  date_created?: string
+  date_updated?: string
+  user_created?: string | DirectusUsers
+  user_updated?: string | DirectusUsers
+}
+
 export interface CustomDirectusTypes {
   block_cardgroup: BlockCardgroup
   block_cardgroup_cards: BlockCardgroupCards
@@ -958,6 +963,7 @@ export interface CustomDirectusTypes {
   projects_settings: ProjectsSettings
   redirects: Redirects
   seo: Seo
+  sites: Sites
   team: Team
   testimonials: Testimonials
 }
