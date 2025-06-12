@@ -6,8 +6,7 @@ import { Navigation } from '@/data/directus-collections';
 import PageBuilder from '@/components/PageBuilder'
 import { fetchTeamMembers } from '@/data/fetch-team';
 
-export default async function Page({ params }: { params: { site: string, lang: string, slug?: string[] } }) {
-  // console.log('\n=== Page Component ===');
+export default async function SlugPage({ params }: { params: { site: string, lang: string, slug?: string[] } }) {  // console.log('\n=== Page Component ===');
   // console.log('Raw params:', params);
   
   const { site, lang, slug } = params;
