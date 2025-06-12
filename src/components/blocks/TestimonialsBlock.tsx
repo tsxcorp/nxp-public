@@ -1,11 +1,12 @@
 'use client'
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import VIcon from '@/components/base/VIcon'
 import TypographyTitle from '@/components/typography/TypographyTitle'
 import TypographyHeadline from '@/components/typography/TypographyHeadline'
 import BlockContainer from '@/components/BlockContainer'
 import { getDirectusMedia } from '@/lib/utils/directus-helpers'
 import Image from 'next/image'
+import clsx from 'clsx'
 
 interface Testimonial {
   id: string | number
@@ -16,6 +17,12 @@ interface Testimonial {
   company_logo: string
   link: string
   content: string
+  translations?: Array<{
+    title?: string
+    subtitle?: string
+    content?: string
+    languages_code: string
+  }>
 }
 
 interface Testimonials {
@@ -24,16 +31,54 @@ interface Testimonials {
   headline?: string
   subtitle?: string
   testimonials: { testimonial: Testimonial }[]
+  translations?: Array<{
+    title?: string
+    headline?: string
+    subtitle?: string
+    languages_code: string
+  }>
 }
 
 interface TestimonialsBlockProps {
   data: Testimonials
+  lang: string
 }
 
-export default function TestimonialsBlock({ data }: TestimonialsBlockProps) {
+export default function TestimonialsBlock({ data, lang }: TestimonialsBlockProps) {
+  const directusLang = lang === 'en' ? 'en-US' : 'vi-VN'
+  const translations = Array.isArray(data.translations) ? data.translations : []
+  const translation = translations.find(t => t.languages_code === directusLang) || translations[0]
+  const title = translation?.title || data.title || ''
+  const headline = translation?.headline || data.headline || ''
+  const subtitle = translation?.subtitle || data.subtitle || ''
+
+  // Debug: log the raw testimonials array
+  console.log('[TestimonialsBlock] data.testimonials:', data.testimonials)
+  if (Array.isArray(data.testimonials)) {
+    data.testimonials.forEach((item, idx) => {
+      if (item && 'testimonial' in item && item.testimonial) {
+        console.log(`[TestimonialsBlock] Testimonial ${idx} id:`, item.testimonial.id)
+        console.log(`[TestimonialsBlock] Testimonial ${idx} full:`, item.testimonial)
+      } else if (item && 'testimonials_id' in item) {
+        console.log(`[TestimonialsBlock] Testimonial ${idx} testimonials_id:`, (item as any).testimonials_id)
+      }
+    })
+  }
+
   const testimonialContainer = useRef<HTMLDivElement>(null)
   const testimonialRefs = useRef<HTMLDivElement[]>([])
   const [currentItemIdx, setCurrentItemIdx] = useState(0)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const bodyStyles = window.getComputedStyle(document.body)
+      console.log('[TestimonialsBlock] CSS Variables:')
+      console.log('--color-primary:', bodyStyles.getPropertyValue('--color-primary'))
+      console.log('--font-body:', bodyStyles.getPropertyValue('--font-body'))
+      console.log('--font-display:', bodyStyles.getPropertyValue('--font-display'))
+      console.log('--font-code:', bodyStyles.getPropertyValue('--font-code'))
+    }
+  }, [])
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const testimonialWidth = testimonialRefs.current[0].offsetWidth
@@ -77,95 +122,142 @@ export default function TestimonialsBlock({ data }: TestimonialsBlockProps) {
   }
 
   return (
-    <BlockContainer className='relative overflow-hidden' fullWidth>
-      <div className='absolute inset-0 ' />
-      <div className='absolute inset-0 ' />
-
-      <div className='relative space-y-4 pt-16 text-center'>
-        <TypographyTitle>{data.title}</TypographyTitle>
-        <TypographyHeadline content={data.headline as string} size='xl' />
-
-        <p className='mx-auto max-w-4xl text-center leading-7'>
-          {data.subtitle}
+    <BlockContainer className="relative overflow-hidden" fullWidth>
+      <div className="relative space-y-4 pt-16 text-center">
+        <TypographyTitle
+          className="text-[var(--color-gray)] font-[var(--font-display) ] font-semibold"
+        >
+          {title}
+        </TypographyTitle>
+        <TypographyHeadline
+          content={headline}
+          size="xl"
+          className="font-[var(--font-display) ] font-semibold text-[var(--color-primary)]"
+        />
+        <p className="mx-auto max-w-4xl text-center leading-7 text-gray-500">
+          {subtitle}
         </p>
       </div>
-      <div className='relative mt-4'>
-        <div className='flex items-center justify-end space-x-8 px-6'>
-          <div className='inline-flex space-x-2'>
-            {data.testimonials.map((item, itemIdx) => (
-              <button
-                key={item.testimonial.id}
-                className={`flex h-3 w-12 items-center justify-center hover:opacity-75 disabled:cursor-not-allowed disabled:opacity-50 ${
-                  itemIdx === currentItemIdx ? 'bg-accent' : 'bg-base-200'
-                }`}
-                onClick={() => handleIndicatorButton(itemIdx)}
-              />
-            ))}
+      <div className="relative mt-8">
+        <div className="flex items-center justify-end space-x-8 px-6">
+          {/* Indicator Dots */}
+          <div className="inline-flex space-x-2">
+            {Array.isArray(data.testimonials) && (() => {
+              const filtered = data.testimonials
+                .filter(item => item && (("testimonial" in item && item.testimonial?.id) || ("testimonials_id" in item && (item as any).testimonials_id)));
+              return filtered
+                .map((item, itemIdx) => {
+                  let key: string | number =
+                    "testimonial" in item && typeof item.testimonial?.id === 'string'
+                      ? item.testimonial.id
+                      : "testimonials_id" in item && typeof (item as any).testimonials_id === 'string'
+                      ? (item as any).testimonials_id
+                      : `idx-${itemIdx}`;
+                  return (
+                    <button
+                      key={key}
+                      className={clsx(
+                        "h-3 w-10 rounded-full transition-all duration-200",
+                        itemIdx === currentItemIdx
+                          ? "bg-[var(--color-primary)] shadow"
+                          : "bg-gray-200"
+                      )}
+                      style={{
+                        border: itemIdx === currentItemIdx ? '2px solid var(--color-primary)' : undefined,
+                        boxShadow: itemIdx === currentItemIdx ? '0 2px 8px 0 rgba(30,64,175,0.15)' : undefined,
+                      }}
+                      onClick={() => handleIndicatorButton(itemIdx)}
+                      aria-label={`Go to testimonial ${itemIdx + 1}`}
+                    />
+                  );
+                })
+                .filter(Boolean);
+            })()}
           </div>
-          <div className='flex space-x-2 justify-self-end'>
+          {/* Navigation Buttons */}
+          <div className="flex space-x-2 justify-self-end">
             <button
               disabled={currentItemIdx === 0}
-              className='flex h-10 w-10 items-center justify-center rounded-full  disabled:cursor-not-allowed disabled:opacity-50'
+              className={clsx(
+                "flex h-10 w-10 items-center justify-center rounded-full transition-all duration-200",
+                "bg-[var(--color-primary)] text-white shadow hover:bg-white hover:text-[var(--color-primary)] border-2 border-[var(--color-primary)]",
+                "disabled:opacity-50 disabled:cursor-not-allowed"
+              )}
               onClick={() => handleNavButton('left')}
+              aria-label="Previous testimonial"
             >
-              <VIcon icon='heroicons:arrow-left' className='h-5 w-5' />
+              <VIcon icon="heroicons:arrow-left" className="h-5 w-5" />
             </button>
             <button
               disabled={currentItemIdx === data.testimonials.length - 1}
-              className='flex h-10 w-10 items-center justify-center rounded-full  disabled:cursor-not-allowed disabled:opacity-50'
+              className={clsx(
+                "flex h-10 w-10 items-center justify-center rounded-full transition-all duration-200",
+                "bg-[var(--color-primary)] text-white shadow hover:bg-white hover:text-[var(--color-primary)] border-2 border-[var(--color-primary)]",
+                "disabled:opacity-50 disabled:cursor-not-allowed"
+              )}
               onClick={() => handleNavButton('right')}
+              aria-label="Next testimonial"
             >
-              <VIcon icon='heroicons:arrow-right' className='h-5 w-5 ' />
+              <VIcon icon="heroicons:arrow-right" className="h-5 w-5" />
             </button>
           </div>
         </div>
+        {/* Testimonial Cards */}
         <div
-          className='scrollbar-hide flex w-full snap-x space-x-6 overflow-x-auto scroll-smooth px-4 py-6 md:px-6 md:pt-8 lg:px-8'
+          className="scrollbar-hide flex snap-x space-x-6 overflow-x-auto scroll-smooth px-4 py-6 md:px-6 md:pt-8 lg:px-8"
+          style={{ background: 'rgba(30,64,175,0.04)' }}
           ref={testimonialContainer}
           onScroll={handleScroll}
         >
-          {data.testimonials.map(({ testimonial }, itemIdx) => (
-            <div
-              key={testimonial.id}
-              ref={(el) => {
-                if (el) testimonialRefs.current[itemIdx] = el
-              }}
-              className='md:w[450px] relative flex w-[350px] flex-shrink-0 snap-center flex-col justify-between overflow-hidden bg-base-200  p-8 shadow-md odd:rounded-br-3xl odd:rounded-tl-3xl even:rounded-bl-3xl even:rounded-tr-3xl  lg:w-[600px]'
-            >
-              <div
-                className='prose prose-sm relative font-mono md:prose-base'
-                dangerouslySetInnerHTML={{ __html: testimonial.content }}
-              />
+          {Array.isArray(data.testimonials) && data.testimonials
+            .filter(item => item && (("testimonial" in item && item.testimonial?.id) || ("testimonials_id" in item && (item as any).testimonials_id)))
+            .map((item, itemIdx) => {
+              const testimonial = "testimonial" in item ? item.testimonial : (item as any).testimonials_id;
+              const testimonialTranslation = testimonial.translations?.find((t: any) => t.languages_code === directusLang) || testimonial.translations?.[0];
+              const testimonialTitle = testimonialTranslation?.title || testimonial.title;
+              const testimonialSubtitle = testimonialTranslation?.subtitle || testimonial.subtitle;
+              const testimonialContent = testimonialTranslation?.content || testimonial.content;
 
-              <div className='mt-4 flex space-x-2 border-t pt-6'>
-                {testimonial.image ? (
-                  <Image
-                    className='inline-block h-16 w-16 rounded-full border'
-                    width={50}
-                    height={50}
-                    src={getDirectusMedia(testimonial.image)}
-                    alt=''
+              return (
+                <div
+                  key={testimonial.id || `testimonial-${itemIdx}`}
+                  ref={el => {
+                    if (el) testimonialRefs.current[itemIdx] = el;
+                  }}
+                  className="relative flex w-[350px] flex-shrink-0 snap-center flex-col justify-between overflow-hidden bg-white p-8 shadow-lg rounded-3xl border border-gray-100 transition-all duration-300 hover:shadow-2xl lg:w-[600px]"
+                  style={{
+                    borderColor: 'var(--color-primary, #1E40AF)',
+                  }}
+                >
+                  <div
+                    className="prose prose-sm relative font-[var(--font-body)] md:prose-base text-gray-700"
+                    dangerouslySetInnerHTML={{ __html: testimonialContent }}
                   />
-                ) : (
-                  <VIcon
-                    icon='ic:baseline-account-circle'
-                    className='inline-block h-16 w-16 rounded-full border '
-                  />
-                )}
-
-                <div className='relative'>
-                  <p className='font-serif font-bold  lg:text-2xl'>
-                    {testimonial.title}
-                  </p>
-                  <p className='font-mono text-sm lg:text-lg'>
-                    {testimonial.subtitle} at {testimonial.company}
-                  </p>
+                  <div className="mt-6 flex items-center space-x-4 border-t pt-6">
+                    {testimonial.image ? (
+                      <Image
+                        className="inline-block h-16 w-16 rounded-full border-2 border-[var(--color-primary)] object-cover"
+                        width={64}
+                        height={64}
+                        src={getDirectusMedia(testimonial.image)}
+                        alt={testimonialTitle || ''}
+                      />
+                    ) : (
+                      <VIcon
+                        icon="ic:baseline-account-circle"
+                        className="inline-block h-16 w-16 rounded-full border-2 border-[var(--color-primary)] bg-gray-100"
+                      />
+                    )}
+                    <div className="text-left">
+                      <p className="font-[var(--font-body) ] font-semibold text-lg text-[var(--color-primary)]">{testimonialTitle}</p>
+                      <p className="font-[var(--font-body)] text-sm text-gray-500">{testimonialSubtitle} {testimonial.company ? `at ${testimonial.company}` : ''}</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
+              );
+            })}
         </div>
       </div>
     </BlockContainer>
-  )
+  );
 }

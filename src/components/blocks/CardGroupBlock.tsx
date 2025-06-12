@@ -16,9 +16,10 @@ export interface CardGroup {
 
 interface CardGroupBlockProps {
   data: CardGroup
+  lang: string
 }
 
-function CardGroupBlock({ data }: CardGroupBlockProps) {
+function CardGroupBlock({ data, lang }: CardGroupBlockProps) {
   return (
     <BlockContainer>
       {data.title && <TypographyTitle>{data.title}</TypographyTitle>}

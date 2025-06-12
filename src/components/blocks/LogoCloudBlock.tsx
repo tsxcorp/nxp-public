@@ -1,55 +1,84 @@
 /* eslint-disable @next/next/no-img-element */
 'use client' // add this line make famer-motion works.
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import BlockContainer from '@/components/BlockContainer'
 import TypographyTitle from '@/components/typography/TypographyTitle'
 import TypographyHeadline from '@/components/typography/TypographyHeadline'
 import { getDirectusMedia } from '@/lib/utils/directus-helpers'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
+import '@/styles/logo-marquee.css'
 
 interface LogoCloudBlockProps {
   id: string
   headline?: string
   title?: string
   logos: Array<{
-    file: {
+    id: string
+    sort: number
+    block_logocloud_id: string
+    directus_files_id: {
       id: string
+      title: string
+      type: string
+      // ... other file properties
     }
   }>
+  translations?: Array<{
+    headline?: string
+    title?: string
+    languages_code: string
+  }>
+  lang: string
 }
 
 interface Props {
   data: LogoCloudBlockProps
+  lang: string
 }
 
-export default function LogoCloudBlock({ data }: Props) {
+export default function LogoCloudBlock({ data, lang }: Props) {
+  const directusLang = lang === 'en' ? 'en-US' : 'vi-VN'
+  const translations = Array.isArray(data.translations) ? data.translations : []
+  const translation = translations.find(t => t.languages_code === directusLang) || translations[0]
+  const title = translation?.title || data.title || ''
+  const headline = translation?.headline || data.headline || ''
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const bodyStyles = window.getComputedStyle(document.body)
+      console.log('[LogoCloudBlock] CSS Variables:')
+      console.log('--color-primary:', bodyStyles.getPropertyValue('--color-primary'))
+      console.log('--font-body:', bodyStyles.getPropertyValue('--font-body'))
+      console.log('--font-display:', bodyStyles.getPropertyValue('--font-display'))
+      console.log('--font-code:', bodyStyles.getPropertyValue('--font-code'))
+    }
+  }, [])
+
   return (
-    <BlockContainer className='mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8'>
-      {data.title && <TypographyTitle>{data.title}</TypographyTitle>}
-      {data.headline && <TypographyHeadline content={data.headline} />}
-      <div className='mt-8  lg:mt-10'>
-        <div className='grid gap-4 md:grid-cols-4 md:gap-8'>
-          {data.logos.map(({ file }, fileIdx) => (
-            <motion.div
-              key={file.id}
-              className='flex items-center justify-center rounded-bl-3xl rounded-tr-3xl border-2 bg-white p-8'
-              initial={{
-                opacity: 0,
-                y: 100,
-              }}
-              whileInView={{
-                opacity: 1,
-                y: 0,
-              }}
-              viewport={{ once: true }}
-              transition={{
-                delay: 0.25 + 0.1 * fileIdx,
-              }}
+    <BlockContainer className='mx-auto max-w-8xl px-4 py-16 sm:px-6 lg:px-8'>
+      {title && <TypographyTitle
+        className='text-[var(--color-gray)] font-[var(--font-display) ] font-semibold'
+      >{title}</TypographyTitle>}
+      {headline && <TypographyHeadline 
+        className='text-[var(--color-primary)] font-[var(--font-display) ] font-semibold'
+        size='xl'
+        content={headline} />}
+      
+      <div className='mt-8 lg:mt-10 overflow-hidden w-full'>
+        <div className='logo-marquee-track'>
+          {[...data.logos, ...data.logos].map((logo, index) => (
+            <div
+              key={`${logo.id}-${index}`}
+              className='flex-shrink-0 w-48 h-48 flex items-center justify-center rounded-xl bg-white p-8 mx-4 transition-transform duration-300 hover:scale-125 hover:z-10'
             >
-              <img className='h-12' src={getDirectusMedia(file.id)} alt='' />
-            </motion.div>
+              <img
+                className='h-24 w-auto object-contain'
+                src={getDirectusMedia(logo.directus_files_id.id)}
+                alt={logo.directus_files_id.title || ''}  
+              />
+            </div>
           ))}
         </div>
       </div>

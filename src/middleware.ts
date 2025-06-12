@@ -7,6 +7,9 @@ const supportedLanguages = ['en', 'vi']
 // Default language
 const defaultLanguage = 'en'
 
+// Default site (nếu muốn redirect root)
+const defaultSite = 'nexpo'
+
 export function middleware(request: NextRequest) {
   // Get pathname from request
   const pathname = request.nextUrl.pathname
@@ -14,6 +17,15 @@ export function middleware(request: NextRequest) {
 
   // Skip if it's an internal path
   if (pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname === '/favicon.ico') {
+    return NextResponse.next()
+  }
+
+  // Regex: /[site]/[lang] hoặc /[site]/[lang]/...
+  const multitenantPattern = /^\/([a-zA-Z0-9_-]+)\/([a-zA-Z-]{2,5})(\/|$)/
+
+  if (multitenantPattern.test(pathname)) {
+    // Đúng multitenant-first, cho đi qua
+    console.log('[middleware] Path matches multitenant-first, pass through')
     return NextResponse.next()
   }
 
@@ -28,15 +40,21 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // For root path, redirect to default language
-  if (pathname === '/') {
-    console.log('[middleware] Root path, redirecting to default language')
-    return NextResponse.redirect(new URL(`/${defaultLanguage}`, request.url))
+  // Nếu là /[site] (chỉ có 1 segment), redirect thành /[site]/[defaultLanguage]
+  const siteOnlyPattern = /^\/([a-zA-Z0-9_-]+)$/.exec(pathname)
+  if (siteOnlyPattern) {
+    const site = siteOnlyPattern[1]
+    return NextResponse.redirect(new URL(`/${site}/${defaultLanguage}`, request.url))
   }
 
-  // For paths without language prefix, add the default language
-  console.log('[middleware] Adding default language prefix')
-  return NextResponse.redirect(new URL(`/${defaultLanguage}${pathname}`, request.url))
+  // Nếu thiếu site/lang, nhưng KHÔNG phải root, thì redirect như cũ
+  if (pathname !== '/') {
+    console.log('[middleware] Path missing site/lang, redirecting')
+    return NextResponse.redirect(new URL(`/${defaultSite}/${defaultLanguage}${pathname.startsWith('/') ? '' : '/'}${pathname}`, request.url))
+  }
+
+  // Nếu là root, cho đi qua (không redirect)
+  return NextResponse.next()
 }
 
 // Configure which paths the middleware should run on

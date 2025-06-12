@@ -18,25 +18,75 @@ export interface Gallery {
           tags?: string
         }
   }>
+  translations?: Array<{
+    languages_code: string
+    title?: string
+    headline?: string
+  }>
 }
 
 interface GalleryBlockProps {
-  className?: string
   data: Gallery
+  lang: string
+  className?: string
 }
 
-function GalleryBlock({ data, className }: GalleryBlockProps) {
+function GalleryBlock({ data, lang, className }: GalleryBlockProps) {
+  // Get translated content based on language
+  const translation =
+    data.translations?.find(
+      t =>
+        t.languages_code === lang ||
+        t.languages_code?.toLowerCase().startsWith(lang.toLowerCase() + '-')
+    );
+  const title = translation?.title || data.title
+  const headline = translation?.headline || data.headline
+
+  // Debug logging
+  console.log('[GalleryBlock] Data:', {
+    id: data.id,
+    defaultTitle: data.title,
+    defaultHeadline: data.headline,
+    translations: data.translations,
+    currentLang: lang,
+    selectedTranslation: translation,
+    finalTitle: title,
+    finalHeadline: headline
+  })
+
   return (
-    <div className={className}>
+    <div className={`modern-gallery-block ${className || ''}`}>
       <BlockContainer>
         {/* Title */}
-        {data.title && <TypographyTitle>{data.title}</TypographyTitle>}
-        {data.headline && <TypographyHeadline content={data.headline} />}
+        {title && 
+        <TypographyTitle
+          className="font-[var(--font-display)] text-[var(--color-gray)]"
+        >{title}
+        </TypographyTitle>}
+        {headline && 
+        <TypographyHeadline 
+          content={headline}
+          size='xl'
+          className="font-[var(--font-display) ] font-semibold  text-[var(--color-primary)]"
+        />}
         {data.gallery_items.length > 0 && (
           <VGallery
-            items={data.gallery_items.map((item) => {
-              return item.directus_files_id as any
-            })}
+            items={data.gallery_items
+              .map(item => {
+                const file = item.directus_files_id;
+                if (!file) return undefined;
+                if (typeof file === 'string') {
+                  return { id: file };
+                }
+                return {
+                  id: file.id,
+                  title: file.title,
+                  description: file.description,
+                  tags: Array.isArray(file.tags) ? file.tags : (file.tags ? [file.tags] : undefined),
+                };
+              })
+              .filter((item): item is { id: string; title?: string; description?: string; tags?: string[] } => !!item && !!item.id)
+            }
           />
         )}
       </BlockContainer>

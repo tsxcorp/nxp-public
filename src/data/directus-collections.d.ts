@@ -96,6 +96,7 @@ export interface BlockGalleryFiles {
 
 export interface BlockHero {
   buttons?: HeroBlock[]
+  languages_code?: string
   content?: string
   headline?: string
   id: string
@@ -557,20 +558,43 @@ export interface Events {
 }
 
 export interface Forms {
-  date_created?: string
-  date_updated?: string
-  id: string
-  key?: string
-  on_success?: string
-  redirect_url?: string
-  schema: FormSchema[]
-  sort?: number
-  status: string
-  submit_label?: string
-  success_message?: string
-  title?: string
-  user_created?: string | DirectusUsers
-  user_updated?: string | DirectusUsers
+  id: string;
+  status: 'published' | 'draft' | 'archived';
+  on_success?: 'redirect' | 'message';
+  redirect_url?: string;
+  tenant_id?: number;
+  event_id?: number;
+  site_id?: number;
+  submit_label?: string;
+  success_message?: string;
+  fields?: FormField[];
+  translations?: FormTranslation[];
+}
+
+export interface FormField {
+  id: string;
+  form_id?: string;
+  name: string;
+  type: 'input' | 'textarea' | 'select';
+  width?: string;
+  validation?: string;
+  conditions?: any; // JSON type, adjust as needed
+  translations?: FormFieldTranslation[];
+}
+
+export interface FormTranslation {
+  languages_code: string;
+  title?: string;
+  submit_label?: string;
+  success_message?: string;
+}
+
+export interface FormFieldTranslation {
+  languages_code: string;
+  label?: string;
+  placeholder?: string;
+  help?: string;
+  options?: any; // JSON type for select options
 }
 
 export interface Globals {
@@ -583,6 +607,18 @@ export interface Globals {
   google_analytics_id?: string
   baidu_analytics_id?: string
   site_id?: string
+  theme?: {
+    primary?: string
+    gray?: string
+    borderRadius?: string
+    fonts?: {
+      families?: {
+        display?: string
+        body?: string
+        code?: string
+      }
+    }
+  }
 }
 
 export interface GlobalsTranslations {
@@ -610,6 +646,18 @@ export interface GlobalsTranslations {
   tagline?: string
   description: string
   title: string
+  theme?: {
+    primary?: string
+    gray?: string
+    borderRadius?: string
+    fonts?: {
+      families?: {
+        display?: string
+        body?: string
+        code?: string
+      }
+    }
+  }
 }
 
 export interface HelpArticles {
@@ -706,42 +754,47 @@ export interface Metrics {
 
 export interface Navigation {
   id: string
-  status: string
-  items: NavigationItem[]
+  status: 'published' | 'draft' | 'archived'
   type: 'main' | 'footer'
+  items: NavigationItem[]
 }
 
-export interface NavigationItems {
+export interface NavigationItem {
   id: string
-  title: string
-  type?: 'page' | 'url'
-  icon?: string
-  label?: string
+  type: 'page' | 'url'
   url?: string
-  has_children?: boolean
-  open_in_new_tab?: boolean
+  page?: {
+    id: string
+    translations: {
+      languages_code: string
+      permalink: string
+    }[]
+  }
+  translations: {
+    languages_code: string
+    title: string
+  }[]
+  href?: string
   sort?: number
-  navigation?: string | Navigation
-  page?: string | Pages
-  parent?: string | NavigationItems
-  children?: NavigationItems[]
 }
 
 export interface Pages {
-  date_created?: string
-  date_updated?: string
-  id: string
-  /**
-   * @deprecated No longer used.
-   */
-  seo?: Seo
-  slug?: string
-  sort?: number
-  status: string
-  title?: string
-  translations?: PagesTranslations[]
-  user_created?: string
-  user_updated?: string
+  id: string;
+  status: 'published' | 'draft' | 'archived';
+  site_id: string;
+  title: string;
+  translations: Array<{
+    id: string;
+    languages_code: string;
+    title: string;
+    permalink: string;
+    blocks: Array<{
+      id: string;
+      collection: string;
+      item: string;
+      sort: number;
+    }>;
+  }>;
 }
 
 export interface PagesTranslations {
@@ -878,7 +931,7 @@ export interface Testimonials {
 }
 
 export interface Sites {
-  id: number
+  id: string
   slug: string
   title?: string
   status?: 'published' | 'draft' | 'archived'
@@ -886,6 +939,7 @@ export interface Sites {
   date_updated?: string
   user_created?: string | DirectusUsers
   user_updated?: string | DirectusUsers
+  navigation?: string[]
 }
 
 export interface CustomDirectusTypes {

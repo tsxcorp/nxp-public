@@ -1,6 +1,7 @@
 'use client'
 import React, { useState } from 'react'
 import VIcon from '@/components/base/VIcon'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface Props {
   title: string
@@ -15,40 +16,42 @@ export function VAccordion({ title, children }: Props) {
   }
 
   return (
-    <div>
+    <div className="mb-4">
       <div
-        className={`rounded-br-3xl rounded-tl-3xl border-2 p-2 transition duration-200 ${
-          open ? 'border-gray-500' : 'border-transparent'
+        className={`rounded-2xl border border-gray-200 bg-white/80 shadow transition duration-200 ${
+          open ? '' : ''
         }`}
       >
-        <div className='relative rounded-br-2xl rounded-tl-2xl  px-6 py-4 '>
-          <dt className='text-lg leading-7'>
+        <div className="relative px-6 py-4">
+          <dt>
             <button
-              className='flex w-full items-start justify-between text-left font-mono focus:outline-none dark:focus:text-accent'
+              className="flex w-full items-center justify-between text-left font-[var(--font-display) ] text-lg text-[var(--color-primary)] font-semibold focus:outline-none"
               onClick={handleToggle}
             >
-              <span className='font-bold '>{title}</span>
-              <span className='flex items-center'>
-                {!open && (
-                  <VIcon
-                    icon='heroicons:plus'
-                    className='h-8 w-8 rounded-full fill-current text-accent'
-                  />
-                )}
-                {open && (
-                  <VIcon
-                    icon='heroicons:minus'
-                    className='h-8 w-8 rounded-full fill-current text-accent'
-                  />
-                )}
+              <span>{title}</span>
+              <span className="flex items-center">
+                <VIcon
+                  icon={open ? 'heroicons:minus' : 'heroicons:plus'}
+                  className="h-7 w-7 rounded-full text-[var(--color-primary)] bg-[var(--color-primary)]/10 transition"
+                />
               </span>
             </button>
           </dt>
-          {open && (
-            <dd className='mt-2'>
-              <div className='prose text-left font-serif '>{children}</div>
-            </dd>
-          )}
+          <AnimatePresence initial={false}>
+            {open && (
+              <motion.dd
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                className="overflow-hidden"
+              >
+                <div className="prose text-left font-[var(--font-body)] text-[var(--color-gray)] mt-2">
+                  {children}
+                </div>
+              </motion.dd>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>

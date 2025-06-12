@@ -1,70 +1,76 @@
-import React from 'react'
-import { Navigation } from '@/data/directus-collections'
-import Link from 'next/link'
+'use client';
+
+import React from 'react';
+import Link from 'next/link';
+import { Navigation, NavigationItem } from '@/data/directus-collections';
+import { useTheme } from '@/components/providers/ThemeProvider';
 
 interface TheHeaderProps {
-  navigation: Navigation | null
-  lang: string
+  navigation: Navigation | null;
+  lang: string;
+  site?: any;
 }
 
-export default function TheHeader({ navigation, lang }: TheHeaderProps) {
-  if (!navigation) return null
+const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL || '';
+
+const TheHeader: React.FC<TheHeaderProps> = ({ navigation, lang, site }) => {
+  const { theme } = useTheme();
+  
+  // Use theme colors for styling
+  const primaryColor = theme?.primary || 'blue';
+  const textColor = theme?.gray || 'gray';
+  const borderRadius = theme?.borderRadius || '1rem';
+  const fontDisplay = theme?.fonts?.families?.display || 'Poppins, sans-serif';
+  const fontBody = theme?.fonts?.families?.body || 'Inter, sans-serif';
 
   return (
-    <header className="bg-white">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8" aria-label="Global">
-        <div className="flex lg:flex-1">
-          <Link href="/" className="-m-1.5 p-1.5">
-            <span className="sr-only">Your Company</span>
-            <img className="h-8 w-auto" src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=600" alt="" />
+    <header 
+      className="w-full bg-white shadow py-3"
+      style={{
+        '--color-primary': primaryColor,
+        '--color-gray': textColor,
+        '--border-radius': borderRadius,
+        '--font-display': fontDisplay,
+        '--font-body': fontBody,
+      } as React.CSSProperties}
+    >
+      <div className="mx-auto flex items-center justify-between max-w-7xl px-5 md:px-12">
+        <div className="flex items-center gap-4">
+          <Link href={`/${site?.slug || ''}/${lang}`} className="flex items-center gap-2">
+            {site?.logo ? (
+              <img
+                src={`${directusUrl}/assets/${site.logo}`}
+                alt={site?.title || 'Logo'}
+                className="h-10 w-auto object-contain"
+              />
+            ) : (
+              <span className="font-bold text-xl uppercase" style={{ color: `var(--color-primary)` }}>
+                {site?.title || 'Site'}
+              </span>
+            )}
           </Link>
         </div>
-        <div className="flex lg:hidden">
-          <button type="button" className="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-700">
-            <span className="sr-only">Open main menu</span>
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-            </svg>
-          </button>
-        </div>
-        <div className="hidden lg:flex lg:gap-x-12">
-          {navigation.items?.map((item) => {
-            let href = '#';
-            function getTitle(translations: any[] | undefined): string | undefined {
-              if (!translations) return undefined;
-              const found = translations.find(
-                (t: any) =>
-                  t.languages_code === lang ||
-                  t.languages_code?.startsWith(lang + '-') ||
-                  lang.startsWith(t.languages_code)
-              );
-              return found?.title;
-            }
-            let displayTitle =
-              getTitle(item.page?.translations) ||
-              getTitle(item.translations) ||
-              'Untitled';
-
-            if (item.type === 'url' && item.url) {
-              href = item.url;
-            } else if (item.type === 'page') {
-              if (item.page && item.page.translations && item.page.translations.length > 0) {
-                href = item.page.translations[0].permalink || '/';
-              }
-            }
-
+        <nav className="flex gap-6 mr-8">
+          {navigation && Array.isArray(navigation.items) && navigation.items.map((item: NavigationItem) => {
+            const title = item.translations?.[0]?.title || '';
             return (
-              <Link
-                key={item.id}
-                href={href}
-                className="text-sm font-semibold leading-6 text-gray-900"
+              <Link 
+                key={item.id} 
+                href={item.href || '#'} 
+                className="font-semibold text-sm uppercase tracking-wide transition-colors duration-200 hover:text-[var(--color-primary)] text-gray-800"
+                // style={{
+                //   color: `var(--color-gray)`,
+                //   fontFamily: 'var(--font-display)',
+                // }}
               >
-                {displayTitle}
+                {title.toUpperCase()}
               </Link>
             );
           })}
-        </div>
-      </nav>
+        </nav>
+      </div>
     </header>
-  )
-}
+  );
+};
+
+export default TheHeader;

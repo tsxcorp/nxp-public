@@ -1,11 +1,19 @@
 import { Link } from '@/lib/navigation'
+import { useEffect } from 'react'
+import BlockContainer from '@/components/BlockContainer'
 
 interface FeaturesBlockProps {
   data: {
-    title: string
-    description: string
+    title?: string
+    description?: string
     features: Feature[]
+    translations?: Array<{
+      title?: string
+      description?: string
+      languages_code: string
+    }>
   }
+  lang: string
 }
 
 interface Feature {
@@ -16,6 +24,12 @@ interface Feature {
   new_tab: boolean
   url: string
   text: string
+  translations?: Array<{
+    title?: string
+    description?: string
+    text?: string
+    languages_code: string
+  }>
 }
 
 function Feature({
@@ -25,7 +39,15 @@ function Feature({
   new_tab,
   url,
   text,
-}: Feature) {
+  translations,
+  lang
+}: Feature & { translations?: Feature['translations'], lang: string }) {
+  const directusLang = lang === 'en' ? 'en-US' : 'vi-VN'
+  const translation = translations?.find(t => t.languages_code === directusLang)
+  const translatedTitle = translation?.title || title
+  const translatedDescription = translation?.description || description
+  const translatedText = translation?.text || text
+
   return (
     <div className='flex flex-col items-center p-4'>
       <svg
@@ -40,14 +62,14 @@ function Feature({
           clipRule='evenodd'
         ></path>
       </svg>
-      <h3 className='my-3 text-3xl font-semibold'>{title}</h3>
+      <h3 className='my-3 text-3xl font-semibold'>{translatedTitle}</h3>
       <div className='my-6 space-y-1 leading-tight'>
-        <p>{description}</p>
+        <p>{translatedDescription}</p>
       </div>
-      {show_link && url && text && (
+      {show_link && url && translatedText && (
         <div>
           <Link href={url} target={new_tab ? '_blank' : '_self'} className=''>
-            <button className='btn btn-accent btn-outline'>{text}</button>
+            <button className='btn btn-accent btn-outline'>{translatedText}</button>
           </Link>
         </div>
       )}
@@ -55,18 +77,35 @@ function Feature({
   )
 }
 
-export default function FeaturesBlock({ data }: FeaturesBlockProps) {
+export default function FeaturesBlock({ data, lang }: FeaturesBlockProps) {
+  const directusLang = lang === 'en' ? 'en-US' : 'vi-VN'
+  const translations = Array.isArray(data.translations) ? data.translations : []
+  const translation = translations.find(t => t.languages_code === directusLang) || translations[0]
+  const title = translation?.title || data.title || ''
+  const description = translation?.description || data.description || ''
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const bodyStyles = window.getComputedStyle(document.body)
+      console.log('[FeaturesBlock] CSS Variables:')
+      console.log('--color-primary:', bodyStyles.getPropertyValue('--color-primary'))
+      console.log('--font-body:', bodyStyles.getPropertyValue('--font-body'))
+      console.log('--font-display:', bodyStyles.getPropertyValue('--font-display'))
+      console.log('--font-code:', bodyStyles.getPropertyValue('--font-code'))
+    }
+  }, [])
+
   return (
-    <section className='m:py-12lg:py-24'>
+    <BlockContainer className='m:py-12lg:py-24'>
       <div className='container mx-auto space-y-2 py-4 text-center'>
-        <h2 className='text-5xl font-bold'>{data.title}</h2>
-        <p>{data.description}</p>
+        <h2 className='text-5xl font-bold'>{title}</h2>
+        <p>{description}</p>
       </div>
       <div className='container mx-auto my-6 grid justify-center gap-4 sm:grid-cols-2 lg:grid-cols-3'>
         {data.features.map((feature: Feature, index: number) => (
-          <Feature key={index} {...feature} />
+          <Feature key={index} {...feature} translations={feature.translations} lang={lang} />
         ))}
       </div>
-    </section>
+    </BlockContainer>
   )
 }

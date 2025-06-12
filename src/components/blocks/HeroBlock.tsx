@@ -1,52 +1,113 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import VButton from '@/components/base/VButton'
 import BlockContainer from '@/components/BlockContainer'
 import { getDirectusMedia } from '@/lib/utils/directus-helpers'
 import Image from 'next/image'
-import { BlockHero } from '@/data/directus-collections'
+import { motion } from 'framer-motion'
 
-interface HeroBlockProps {
-  data: BlockHero
+export interface BlockHeroButton {
+  id: string
+  label: string
+  href: string
+  open_in_new_window: boolean
+  variant: string
+  translations?: Array<{
+    label: string
+    href: string
+    languages_code: string
+  }>
 }
 
-export default function HeroBlock({ data }: HeroBlockProps) {
+export interface BlockHero {
+  headline: string
+  title?: string | null
+  content: string
+  image?: string
+  buttons?: BlockHeroButton[]
+  button_group?: {
+    buttons: BlockHeroButton[]
+  }
+}
+
+interface HeroBlockProps {
+  data: BlockHero & {
+    translations?: Array<any>
+    title?: string | null
+  }
+  lang: string
+}
+
+export default function HeroBlock({ data, lang }: HeroBlockProps) {
+  // console.log('[HeroBlock] lang prop:', lang)
+  const directusLang = lang === 'en' ? 'en-US' : 'vi-VN'
+  // console.log('[HeroBlock] directusLang:', directusLang)
+  // console.log('[HeroBlock] data.translations:', data.translations)
+  const translations = Array.isArray(data.translations) ? data.translations : [];
+  const translation = translations.find((t: any) => t.languages_code === directusLang) || translations[0];
+  const headline = translation?.headline || '';
+  const title = translation?.title || '';
+  const content = translation?.content || '';
+
+  const buttons = data.buttons || data.button_group?.buttons || [];
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const bodyStyles = window.getComputedStyle(document.body);
+      console.log('[HeroBlock] CSS Variables:');
+      console.log('--color-primary:', bodyStyles.getPropertyValue('--color-primary'));
+      console.log('--font-body:', bodyStyles.getPropertyValue('--font-body'));
+      console.log('--font-display:', bodyStyles.getPropertyValue('--font-display'));
+      console.log('--font-code:', bodyStyles.getPropertyValue('--font-code'));
+    }
+  }, []);
+
   return (
     <BlockContainer className='relative grid gap-6 md:grid-cols-3'>
-      <div className=' md:col-span-2 md:pt-12'>
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, ease: 'easeOut' }}
+        className='md:col-span-2 md:pt-12'
+      >
         <h1
-          className='xs:text-5xl color-em font-serif text-4xl font-extrabold leading-9  sm:text-7xl lg:text-8xl'
-          dangerouslySetInnerHTML={
-            data.headline ? { __html: data.headline } : undefined
-          }
+          className="text-[var(--color-primary)] xs:text-5xl font-[var(--font-display) ] font-bold text-4xl  sm:text-2xl lg:text-6xl leading-snug ]"
+          dangerouslySetInnerHTML={headline ? { __html: headline } : undefined}
         />
-        <p className='w-full py-6 font-serif text-xl lg:text-2xl lg:leading-loose'>
-          {data.content}
+        <p className="w-full py-6 font-[var(--font-display)] text-[18px] lg:leading-loose text-[var(--color-gray)]">
+          {content}
         </p>
         <div className='flex flex-col space-y-4 md:flex-row md:space-x-4 md:space-y-0'>
-          {data.buttons &&
-            data.buttons.map((button, buttonIdx) => (
+          {buttons.map((button) => {
+            const btnTrans = button.translations?.find(t => t.languages_code === directusLang)
+            return (
               <VButton
-                key={button.label}
-                href={button.href}
+                key={button.id}
+                href={btnTrans?.href || button.href}
                 variant={button.variant}
                 target={button.open_in_new_window ? '_blank' : '_self'}
                 size='lg'
               >
-                {button.label}
+                {btnTrans?.label || button.label}
               </VButton>
-            ))}
+            )
+          })}
         </div>
-      </div>
+      </motion.div>
       {data.image && (
-        <div className='rounded-tl-[64px] border-2 border-primary p-2  md:-mr-16 lg:relative lg:-mr-48 lg:h-full'>
+        <motion.div
+          initial={{ opacity: 0, x: 100 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
+          className='p-2 md:-mr-16 lg:relative lg:-mr-48 lg:h-full flex items-center justify-center'
+        >
           <Image
-            className='max-h-[700px] w-full overflow-hidden rounded-tl-[56px] object-cover'
-            width='500'
-            height='500'
+            className='max-h-[700px] w-full overflow-hidden object-cover'
+            width='700'
+            height='700'
             src={getDirectusMedia(data.image) as any}
             alt=''
           />
-        </div>
+        </motion.div>
       )}
     </BlockContainer>
   )

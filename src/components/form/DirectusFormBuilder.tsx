@@ -1,94 +1,168 @@
-'use client'
+import { Form, useForm } from 'react-hook-form';
+import { FormSchema } from '@/data/directus-schema';
+import { cn } from '@/lib/utils/tw';
 
-import React, { useMemo } from 'react'
-import { FieldValues, UseFormReturn } from 'react-hook-form'
-import { FormSchema } from '@/data/directus-schema'
-import formTheme from '@/form.theme'
+interface DirectusFormBuilderProps {
+  element: FormSchema;
+  hookForm: any;
+}
 
-export default function DirectusFormBuilder(props: {
-  element: FormSchema
-  hookForm: UseFormReturn<FieldValues, any>
-}) {
-  const { element, hookForm } = props
+export default function DirectusFormBuilder({ element, hookForm }: DirectusFormBuilderProps) {
+  console.log('DirectusFormBuilder - Received element:', element);
+  console.log('DirectusFormBuilder - Hook form:', hookForm);
 
-  const { register } = hookForm
+  if (!element?.name) {
+    console.log('DirectusFormBuilder - No element name found');
+    return null;
+  }
 
-  const validation = useMemo(() => {
-    if (element.validation) {
-      try {
-        if (element.validation.pattern && element.validation.pattern.value) {
-          element.validation.pattern.value = new RegExp(
-            element.validation.pattern.value
-          )
-        }
+  const { register } = hookForm;
+  console.log('DirectusFormBuilder - Register function:', register);
 
-        if (
-          element.validation.pattern &&
-          typeof element.validation.pattern === 'string'
-        ) {
-          element.validation.pattern = new RegExp(element.validation.pattern)
-        }
+  // Use only neutral or variable-based colors for styling
+  const commonProps = {
+    id: element.name,
+    name: element.name,
+    className: 'form-input w-full rounded-md px-4 py-4 bg-[var(--color-bg,theme(colors.white))] text-gray-900 border border-[var(--color-border,theme(colors.neutral.300))] focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]',
+    placeholder: element.placeholder || '',
+    'aria-label': element.label || element.name,
+  };
 
-        return element.validation
-      } catch (error) {
-        console.log(
-          'ivalid validation format, plz check:https://react-hook-form.com/docs/useform/register ,especially Options.'
-        )
-      }
+  console.log('DirectusFormBuilder - Common props:', commonProps);
+  console.log('DirectusFormBuilder - Element type:', element.type);
+
+  // Common validation rules
+  const getValidationRules = () => {
+    const rules: any = {
+      required: element.validation?.includes('required') ? 'This field is required' : false
+    };
+
+    if (element.validation?.includes('email')) {
+      rules.pattern = {
+        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        message: 'Invalid email address'
+      };
     }
 
-    return { required: false }
-  }, [element.validation])
+    return rules;
+  };
 
-  switch (element.type) {
-    case 'textarea':
+  switch (element.$formkit || element.type) {
+    case 'text':
+    case 'input':
+      console.log('DirectusFormBuilder - Rendering input field');
       return (
-        <textarea
-          className={formTheme.textAreaClass}
-          key={element.name}
-          placeholder={element.placeholder}
-          {...register(element.name!, validation)}
+        <input 
+          {...commonProps}
+          type="text"
+          {...register(element.name, getValidationRules())}
         />
-      )
-    case 'select':
+      );
+
+    case 'email':
+      console.log('DirectusFormBuilder - Rendering email field');
       return (
-        <select
-          className={formTheme.selectClass}
-          // placeholder={element.placeholder}
-          {...register(element.name!, validation)}
+        <input 
+          {...commonProps}
+          type="email"
+          {...register(element.name, getValidationRules())}
+        />
+      );
+
+    case 'number':
+      console.log('DirectusFormBuilder - Rendering number field');
+      return (
+        <input 
+          {...commonProps}
+          type="number"
+          {...register(element.name, {
+            ...getValidationRules(),
+            valueAsNumber: true
+          })}
+        />
+      );
+
+    case 'textarea':
+      console.log('DirectusFormBuilder - Rendering textarea field');
+      return (
+        <textarea 
+          {...commonProps}
+          rows={5}
+          {...register(element.name, getValidationRules())}
+        />
+      );
+
+    case 'select':
+      console.log('DirectusFormBuilder - Rendering select field with options:', element.options);
+      return (
+        <select 
+          {...commonProps}
+          {...register(element.name, getValidationRules())}
         >
-          {element.placeholder && (
-            <option value='' hidden selected disabled>
-              {element.placeholder}
-            </option>
-          )}
-          {element.choices?.map((res, key) => (
-            <option
-              value={res.value}
-              key={`select-${element.name}-option-${key}`}
-            >
-              {res.label}
+          <option value="">Select an option</option>
+          {element.options?.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
             </option>
           ))}
         </select>
-      )
-    case 'checkbox':
+      );
+
+    case 'multiselect':
+      console.log('DirectusFormBuilder - Rendering multiselect field with options:', element.options);
       return (
-        <input
-          className={formTheme.checkboxClass}
-          type='checkbox'
-          placeholder={element.placeholder}
-          {...register(element.name!, validation)}
-        />
-      )
+        <div className="space-y-2">
+          {element.options?.map((option) => (
+            <label key={option.value} className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                value={option.value}
+                className="form-checkbox h-4 w-4 text-[var(--color-primary)] border-[var(--color-border,theme(colors.neutral.300))] rounded focus:ring-[var(--color-primary)]"
+                {...register(element.name, {
+                  ...getValidationRules(),
+                  validate: (value: string[] | undefined) => {
+                    if (element.validation?.includes('required') && (!value || value.length === 0)) {
+                      return 'Please select at least one option';
+                    }
+                    return true;
+                  }
+                })}
+              />
+              <span className="text-[var(--color-text,theme(colors.neutral.900))]">{option.label}</span>
+            </label>
+          ))}
+        </div>
+      );
+
+    case 'file':
+      console.log('DirectusFormBuilder - Rendering file field');
+      return (
+        <div className="relative">
+          <input 
+            {...commonProps}
+            type="file"
+            className={cn(commonProps.className, 'file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[var(--color-primary)] file:text-white hover:file:bg-[var(--color-primary)]/90')}
+            {...register(element.name, getValidationRules())}
+          />
+        </div>
+      );
+
+    case 'image':
+      console.log('DirectusFormBuilder - Rendering image field');
+      return (
+        <div className="relative">
+          <input 
+            {...commonProps}
+            type="file"
+            accept="image/*"
+            className={cn(commonProps.className, 'file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[var(--color-primary)] file:text-white hover:file:bg-[var(--color-primary)]/90')}
+            {...register(element.name, getValidationRules())}
+          />
+        </div>
+      );
+
     default:
-      return (
-        <input
-          type={element.type}
-          placeholder={element.placeholder}
-          className={formTheme.inputClass}
-          {...register(element.name!, validation)}
-        />
-      )
+      console.log('DirectusFormBuilder - No matching field type found');
+      return null;
   }
 }

@@ -18,33 +18,50 @@ interface FormProps {
   className?: string
 }
 
-function transformSchema(schema: Array<FormSchema>) {
-  return schema.map((item) => {
-    const newItem = { ...item }
-    // newItem.$formkit = newItem.type
+function transformSchema(schema: Array<FormSchema> = []) {
+  return (schema || []).map((item) => {
+    const newItem = { ...item };
+    // Map type to FormKit-compatible type
+    if (newItem.type === 'input') {
+      newItem.$formkit = 'text';
+    } else {
+      newItem.$formkit = newItem.type;
+    }
+    // Set outerclass based on width
     switch (newItem.width) {
       case '33':
-        newItem.outerclass = 'md:col-span-2'
-        break
+        newItem.outerclass = 'md:col-span-2';
+        break;
       case '50':
-        newItem.outerclass = 'md:col-span-3'
-        break
+        newItem.outerclass = 'md:col-span-3';
+        break;
       case '67':
-        newItem.outerclass = 'md:col-span-4'
-        break
+        newItem.outerclass = 'md:col-span-4';
+        break;
       case '100':
-        newItem.outerclass = 'md:col-span-6'
-        break
+        newItem.outerclass = 'md:col-span-6';
+        break;
       default:
-        newItem.outerclass = 'md:col-span-6'
+        newItem.outerclass = 'md:col-span-6';
     }
-    newItem.validation
-    return newItem
-  })
+    // Add validation rules
+    if (newItem.validation) {
+      newItem.validation = newItem.validation; // Already a string, e.g., "email|required"
+    }
+    // For select fields, ensure options are formatted
+    if (newItem.type === 'select' && newItem.options) {
+      newItem.options = newItem.options.map((opt: { label: string; value: string }) => ({
+        label: opt.label,
+        value: opt.value,
+      }));
+    }
+    return newItem;
+  });
 }
 
 function VForm(props: FormProps) {
   const { form } = props
+  console.log('VForm - Received form props:', props);
 
   const router = useRouter()
 
@@ -52,16 +69,26 @@ function VForm(props: FormProps) {
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(false)
 
-  const schema = transformSchema(form.schema)
+  const schema = transformSchema(form.schema || [])
+  console.log('VForm - Transformed schema:', schema);
 
   const hookForm = useForm<any>()
+  console.log('VForm - Hook form instance:', hookForm);
 
   async function submitForm(data: any) {
     setLoading(true)
     try {
+      // Transform data to answers array
+      const answers = Object.entries(data).map(([field, value]) => ({
+        field,
+        value
+      }));
+
       await directusApi.request(
-        createItem('inbox', {
-          data: { ...data },
+        createItem('form_submissions', {
+          
+            answers,
+          
           form: props.form.id,
         })
       )
@@ -69,7 +96,6 @@ function VForm(props: FormProps) {
       if (form.on_success === 'redirect' && form.redirect_url) {
         return router.push(form.redirect_url)
       }
-      console.log('form redirect_url invali.')
     } catch (err) {
       setError(err as any)
     } finally {
@@ -80,7 +106,7 @@ function VForm(props: FormProps) {
   return (
     <div className={props.className}>
       <div className='mb-4'>
-        {error && <VAlert type='error'>{error}</VAlert>}
+        {error && <VAlert type='error'>{(error as any)?.message || String(error)}</VAlert>}
         {form.on_success === 'message' && success && (
           <VAlert
             type='success'
@@ -97,28 +123,31 @@ function VForm(props: FormProps) {
           onSubmit={hookForm.handleSubmit(submitForm)}
         >
           <div className='grid gap-6 md:grid-cols-6'>
-            {schema.map((element) => (
-              <div
-                key={`fields-${element.name}`}
-                className={cn(element.outerclass, 'w-full')}
-              >
-                <label className='label' htmlFor={element.name}>
-                  <span className='label-text'>{element.label}</span>
-                </label>
-                <DirectusFormBuilder element={element} hookForm={hookForm} />
-                <ErrorMessage
-                  errors={hookForm.formState.errors}
-                  name={element.name}
-                  render={({ message }) => (
-                    <VAlert type='error'>{message}</VAlert>
-                  )}
-                />
-              </div>
-            ))}
+            {schema.map((element) => {
+              console.log('VForm - Rendering schema element:', element);
+              return (
+                <div
+                  key={`fields-${element.name}`}
+                  className={cn(element.outerclass, 'w-full')}
+                >
+                  <label className='label' htmlFor={element.name}>
+                    <span className='label-text text-white'>{element.label}</span>
+                  </label>
+                  <DirectusFormBuilder element={element} hookForm={hookForm} />
+                  <ErrorMessage
+                    errors={hookForm.formState.errors}
+                    name={element.name}
+                    render={({ message }) => (
+                      <VAlert type='error'>{message}</VAlert>
+                    )}
+                  />
+                </div>
+              );
+            })}
           </div>
           <div className='col-span-6 mx-auto'>
             <div className='form-control mt-6'>
-              <button className='btn btn-primary'>
+              <button className='bg-[var(--color-primary)] text-white px-4 py-2 rounded-md'>
                 {loading && <span className='loading loading-spinner'></span>}
                 {!loading && props.form.submit_label}
               </button>
