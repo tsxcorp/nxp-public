@@ -3,53 +3,34 @@ import { fetchNavigationSafe, fetchPage, getSite } from '@/data/directus-api';
 import TheHeader from '@/components/navigation/TheHeader';
 import TheFooter from '@/components/navigation/TheFooter';
 import { Navigation } from '@/data/directus-collections';
-import PageBuilder from '@/components/PageBuilder'
+import PageBuilder from '@/components/PageBuilder';
 import { fetchTeamMembers } from '@/data/fetch-team';
+import { PageProps } from '@/types/next';
 
-export default async function SlugPage({ params }: { params: { site: string, lang: string, slug?: string[] } }) {  // console.log('\n=== Page Component ===');
-  // console.log('Raw params:', params);
+export default async function SlugPage({ params, searchParams }: PageProps) {
+  const [resolvedParams, resolvedSearchParams] = await Promise.all([
+    params,
+    searchParams
+  ]);
+  const { site, lang, slug } = resolvedParams;
   
-  const { site, lang, slug } = params;
-  // console.log('Parsed params:', { site, lang, slug });
-
   // Fetch site data to get siteId (if multi-tenant)
   const siteData = await getSite(site);
 
   // Fetch navigation (main/footer)
-  // console.log('\nFetching navigation...');
   const [mainNav, footerNav] = await Promise.all([
     fetchNavigationSafe(site, lang, 'main'),
     fetchNavigationSafe(site, lang, 'footer')
   ]);
-  // console.log('Navigation results:', {
-  //   mainNav: mainNav ? {
-  //     id: mainNav.id,
-  //     type: mainNav.type,
-  //     itemsCount: mainNav.items.length
-  //   } : null,
-  //   footerNav: footerNav ? {
-  //     id: footerNav.id,
-  //     type: footerNav.type,
-  //     itemsCount: footerNav.items.length
-  //   } : null
-  // });
 
   // Fetch page content
   // If no slug or slug is empty array, fetch homepage (permalink: "/")
   // If slug is ['nexpo'], also fetch homepage
   const pageSlug = !slug || slug.length === 0 || (slug.length === 1 && slug[0] === site) ? '/' : slug.join('/');
-  // console.log('\nFetching page:', {
-  //   site,
-  //   lang,
-  //   pageSlug,
-  //   originalSlug: slug
-  // });
   
   const pageContent = await fetchPage(site, lang, pageSlug);
-  // console.log('pageContent:', JSON.stringify(pageContent, null, 2));
 
   if (!pageContent) {
-    // console.log('\nNo page content found, showing 404');
     // If no page found, return 404
     return (
       <>
@@ -69,7 +50,8 @@ export default async function SlugPage({ params }: { params: { site: string, lan
                   slug,
                   pageSlug,
                   hasMainNav: !!mainNav,
-                  hasFooterNav: !!footerNav
+                  hasFooterNav: !!footerNav,
+                  searchParams: resolvedSearchParams
                 }, null, 2)}
               </pre>
             </div>
@@ -86,11 +68,7 @@ export default async function SlugPage({ params }: { params: { site: string, lan
   const firstTrans = (translations.find((t: any) => t.languages_code === (lang === 'en' ? 'en-US' : 'vi-VN')) || translations[0]) as {
     title?: string;
     languages_code?: string;
-    blocks?: any[];
   } | undefined;
-
-  // Log blocks for debug
-  // console.log('firstTrans.blocks:', JSON.stringify(firstTrans?.blocks, null, 2));
 
   // Fetch team members for each block_team block
   const blocks = Array.isArray(pageContent.blocks) ? pageContent.blocks : [];
@@ -122,4 +100,4 @@ export default async function SlugPage({ params }: { params: { site: string, lan
       <TheFooter navigation={footerNav} lang={lang} />
     </>
   );
-} 
+}

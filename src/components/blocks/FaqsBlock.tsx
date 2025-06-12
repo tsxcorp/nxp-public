@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import BlockContainer from '@/components/BlockContainer'
 import TypographyTitle from '@/components/typography/TypographyTitle'
 import TypographyHeadline from '@/components/typography/TypographyHeadline'
@@ -33,7 +33,7 @@ export default function FaqsBlock({ data, lang }: Props) {
   const translation = translations.find(t => t.languages_code === directusLang) || translations[0]
   const title = translation?.title || data.title || ''
   const headline = translation?.headline || data.headline || ''
-  const faqs = translation?.faqs || []
+  const faqs = useMemo(() => translation?.faqs || [], [translation?.faqs])
 
   useEffect(() => {
     console.log('\n=== FAQs Block Data ===')

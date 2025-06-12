@@ -157,6 +157,6 @@ export type DirectusSchema = {
   block_testimonials: BlockTestimonials
   block_testimonials_items: BlockTestimonialsItems
   block_video: BlockVideo
-  form_submission: any[]
-  form_submissions: any[]
+  form_submission: any
+  form_submissions: any
 }

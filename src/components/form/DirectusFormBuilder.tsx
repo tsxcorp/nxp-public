@@ -23,9 +23,10 @@ export default function DirectusFormBuilder({ element, hookForm }: DirectusFormB
   const commonProps = {
     id: element.name,
     name: element.name,
-    className: 'form-input w-full rounded-md px-4 py-4 bg-[var(--color-bg,theme(colors.white))] text-gray-900 border border-[var(--color-border,theme(colors.neutral.300))] focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]',
+    className: 'form-input w-full rounded-md px-4 py-4 bg-[var(--color-bg,theme(colors.white))] text-gray-900 border border-gray-300 focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]',
     placeholder: element.placeholder || '',
     'aria-label': element.label || element.name,
+    style: { borderColor: 'var(--color-border, #d1d5db)' },
   };
 
   console.log('DirectusFormBuilder - Common props:', commonProps);

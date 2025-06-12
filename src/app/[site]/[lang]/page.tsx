@@ -4,9 +4,13 @@ import TheHeader from '@/components/navigation/TheHeader';
 import TheFooter from '@/components/navigation/TheFooter';
 import { Navigation } from '@/data/directus-collections';
 import PageBuilder from '@/components/PageBuilder'
+import { PageProps } from '@/types/next';
 
-export default async function Page({ params }: { params: Promise<{ site: string, lang: string }> }) {
-  const resolvedParams = await params;
+export default async function Page({ params, searchParams }: PageProps) {
+  const [resolvedParams, resolvedSearchParams] = await Promise.all([
+    params,
+    searchParams
+  ]);
   const { site, lang } = resolvedParams;
 
   // Fetch navigation (main/footer)
@@ -42,6 +46,7 @@ export default async function Page({ params }: { params: Promise<{ site: string,
               <pre className="text-sm">
                 {JSON.stringify({
                   params: resolvedParams,
+                  searchParams: resolvedSearchParams,
                   hasMainNav: !!mainNav,
                   hasFooterNav: !!footerNav
                 }, null, 2)}
@@ -59,10 +64,6 @@ export default async function Page({ params }: { params: Promise<{ site: string,
       <TheHeader navigation={mainNav} lang={lang} site={siteData} />
       <div className="min-h-screen w-full bg-gray-50 py-12">
         <div className="w-full px-4 md:px-8 lg:px-16">
-          {/* <h1 className="text-3xl font-bold mb-4">{translation.title || pageContent?.title || 'Untitled'}</h1>
-          <div className="mb-2">Site: <b>{site}</b></div>
-          <div className="mb-2">Lang: <b>{lang}</b></div>
-          <div className="mb-2">Slug: <b>/</b></div> */}
           <PageBuilder blocks={Array.isArray(pageContent.blocks) ? pageContent.blocks : []} lang={lang} />
         </div>
       </div>

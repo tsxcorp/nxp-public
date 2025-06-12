@@ -13,6 +13,7 @@ import TeamCard from '@/components/TeamCard'
 import { BlockTeam, Team } from '@/data/directus-collections'
 import { getDirectusMedia } from '@/lib/utils/directus-helpers'
 import { motion } from 'framer-motion'
+import Image from 'next/image'
 
 interface SocialMedia {
   service: string
@@ -127,9 +128,11 @@ const TeamBlock = ({ data, lang, teams = [] }: TeamBlockProps) => {
                 >
                   <div className="relative w-42 h-42 mx-auto mb-4 transition-transform duration-500 scale-100 group-hover:scale-105">
                     {imageUrl ? (
-                      <img
+                      <Image
                         src={imageUrl}
                         alt={member.name}
+                        width={168}
+                        height={168}
                         className="w-42 h-42 rounded-full object-cover border-2 border-[var(--color-primary)] shadow-lg"
                       />
                     ) : (
