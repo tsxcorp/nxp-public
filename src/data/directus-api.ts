@@ -20,17 +20,9 @@ import {
 } from '@/data/directus-collections'
 import { DirectusSchema } from '@/data/directus-schema'
 import { cache } from 'react'
-
-const withRequestCallback = function <Schema extends object, Output>(
-  onRequest: RequestTransformer,
-  getOptions: RestCommand<Output, Schema>
-): RestCommand<Output, Schema> {
-  return () => {
-    const options = getOptions()
-    options.onRequest = onRequest
-    return options
-  }
-}
+import { CACHE_TIMES, LANGUAGE_MAP } from '@/lib/constants'
+import { getDirectusLanguage, getBestTranslation } from '@/lib/utils/language'
+import type { SupportedLanguage } from '@/lib/constants'
 
 const withRevalidate = function <Schema extends object, Output>(
   getOptions: RestCommand<Output, Schema>,
@@ -47,33 +39,28 @@ const withRevalidate = function <Schema extends object, Output>(
 
 // Check if we're in a development environment where Directus might not be available
 const isDirectusAvailable = async (): Promise<boolean> => {
-  // Check if fallback data is enabled - if so, skip Directus connection attempt
   if (process.env.NEXT_PUBLIC_ENABLE_FALLBACK_DATA === 'true') {
-    console.log('[Directus] Fallback data enabled, skipping connection check')
     return false
   }
 
   try {
     const directusURL = getDirectusURL()
-    console.log('[Directus] Checking availability at:', directusURL)
     const response = await fetch(`${directusURL}/server/ping`, {
       method: 'GET',
-      signal: AbortSignal.timeout(5000), // 5 second timeout
+      signal: AbortSignal.timeout(5000),
     })
-    const available = response.ok
-    console.log('[Directus] Server available:', available)
-    return available
+    return response.ok
   } catch (error) {
     console.warn('[Directus] Server not available:', error)
     return false
   }
 }
 
-// Add error handling for Directus connection
+// Create Directus client with error handling
 const createDirectusClient = () => {
   try {
     const directusURL = getDirectusURL()
-    console.log('[Directus] Creating client for:', directusURL)
+    console.log('[Directus] Connecting to:', directusURL)
     
     return createDirectus<DirectusSchema>(directusURL)
       .with(
@@ -104,60 +91,48 @@ const createDirectusClient = () => {
 
 const directusApi = createDirectusClient()
 
-// Only set token if it exists
+// Set token if available
 const adminToken = process.env.DIRECTUS_ADMIN_TOKEN
 if (adminToken && adminToken !== 'your-directus-admin-token') {
   directusApi.setToken(adminToken)
-  console.log('[Directus] Admin token set')
 } else {
-  console.warn('[Directus] No valid admin token found. Using fallback data.')
+  console.warn('[Directus] No valid admin token found. Some operations may fail.')
 }
 
-// Enhanced error handling wrapper for API calls with better fallbacks
+// Enhanced error handling wrapper
 const safeApiCall = async <T>(
   apiCall: () => Promise<T>, 
   fallback: T | null = null,
   operationName: string = 'API call'
 ): Promise<T | null> => {
   try {
-    // Check if Directus is available before making the call
     const available = await isDirectusAvailable()
     if (!available) {
-      console.warn(`[Directus API] Server not available for ${operationName}, using fallback`)
+      console.warn(`[Directus API] Server not available for ${operationName}, returning fallback`)
       return fallback
     }
     
-    const result = await apiCall()
-    console.log(`[Directus API] ${operationName} successful`)
-    return result
+    return await apiCall()
   } catch (error) {
     console.error(`[Directus API] ${operationName} failed:`, error)
-    if (error instanceof Error) {
-      if (error.message.includes('fetch failed') || error.message.includes('Failed to fetch')) {
-        console.error('[Directus API] Connection error - Directus server is not running or not accessible')
-      } else if (error.message.includes('timeout')) {
-        console.error('[Directus API] Request timeout - Directus server is not responding')
-      }
-    }
-    console.warn(`[Directus API] Using fallback for ${operationName}`)
     return fallback
   }
 }
 
-// Mock data for fallback when Directus is not available
+// Mock data generators
 const getMockSite = (slug: string): Sites | null => {
   if (slug === 'default') return null
   
   return {
     id: '1',
     slug: slug,
-    navigation: ['1', '2'], // footer, main
+    navigation: ['1', '2'],
     status: 'published',
-    title: `${slug.charAt(0).toUpperCase() + slug.slice(1)} Site`
+    title: `${slug} Site`
   }
 }
 
-const getMockGlobals = (lang: string): Globals => ({
+const getMockGlobals = (lang: SupportedLanguage): Globals => ({
   id: '1',
   site_id: '1',
   theme: {
@@ -174,7 +149,7 @@ const getMockGlobals = (lang: string): Globals => ({
   },
   translations: [{
     id: 1,
-    languages_code: lang,
+    languages_code: getDirectusLanguage(lang),
     title: 'Demo Site',
     description: 'A demo site running without Directus backend',
     project_setting: {
@@ -199,7 +174,7 @@ const getMockGlobals = (lang: string): Globals => ({
   }]
 })
 
-const getMockNavigation = (siteSlug: string, lang: string, type: 'main' | 'footer' = 'main'): Navigation => ({
+const getMockNavigation = (siteSlug: string, lang: SupportedLanguage, type: 'main' | 'footer' = 'main'): Navigation => ({
   id: type === 'main' ? '2' : '1',
   status: 'published',
   type: type,
@@ -211,9 +186,9 @@ const getMockNavigation = (siteSlug: string, lang: string, type: 'main' | 'foote
       href: `/${siteSlug}/${lang}/`,
       page: {
         id: '1',
-        translations: [{ languages_code: lang, permalink: '/' }]
+        translations: [{ languages_code: getDirectusLanguage(lang), permalink: '/' }]
       },
-      translations: [{ title: 'Home', languages_code: lang }]
+      translations: [{ title: 'Home', languages_code: getDirectusLanguage(lang) }]
     },
     {
       id: '2',
@@ -222,9 +197,9 @@ const getMockNavigation = (siteSlug: string, lang: string, type: 'main' | 'foote
       href: `/${siteSlug}/${lang}/about`,
       page: {
         id: '2',
-        translations: [{ languages_code: lang, permalink: '/about' }]
+        translations: [{ languages_code: getDirectusLanguage(lang), permalink: '/about' }]
       },
-      translations: [{ title: 'About', languages_code: lang }]
+      translations: [{ title: 'About', languages_code: getDirectusLanguage(lang) }]
     }
   ] : [
     {
@@ -233,23 +208,24 @@ const getMockNavigation = (siteSlug: string, lang: string, type: 'main' | 'foote
       url: '#',
       href: '#',
       page: null,
-      translations: [{ title: 'Privacy', languages_code: lang }]
+      translations: [{ title: 'Privacy', languages_code: getDirectusLanguage(lang) }]
     }
   ]
 })
 
-const getMockPage = (permalink: string, lang: string): Pages => {
+const getMockPage = (permalink: string, lang: SupportedLanguage): Pages => {
   const isHome = permalink === '/'
+  const directusLang = getDirectusLanguage(lang)
   
   return {
     id: isHome ? '1' : '2',
     status: 'published',
     site_id: '1',
-    title: isHome ? 'Welcome to Nexpo' : 'About Us',
+    title: isHome ? 'Welcome' : 'About Us',
     translations: [{
       id: isHome ? '1' : '2',
-      languages_code: lang,
-      title: isHome ? 'Welcome to Nexpo' : 'About Us',
+      languages_code: directusLang,
+      title: isHome ? 'Welcome' : 'About Us',
       permalink: permalink,
     }],
     blocks: [
@@ -259,43 +235,30 @@ const getMockPage = (permalink: string, lang: string): Pages => {
         item: {
           id: '1',
           translations: [{
-            languages_code: lang,
-            title: isHome ? 'Welcome to Nexpo' : 'About Us',
+            languages_code: directusLang,
+            title: isHome ? 'Demo Site' : 'About Us',
             headline: isHome 
-              ? 'Your Gateway to Amazing Events'
-              : 'Learn More About Our Platform',
+              ? 'This site is running in demo mode without Directus backend'
+              : 'Learn more about our demo site',
             content: isHome
-              ? 'Discover, connect, and explore the most exciting events and exhibitions with Nexpo.'
-              : 'Nexpo is a comprehensive platform for event management and discovery.'
-          }],
-          buttons: isHome ? [{
-            id: '1',
-            label: 'Get Started',
-            href: `/${lang}/about`,
-            open_in_new_window: false,
-            variant: 'solid',
-            translations: [{
-              label: 'Get Started',
-              href: `/${lang}/about`,
-              languages_code: lang
-            }]
-          }] : []
+              ? 'The application is working properly, but no Directus server is connected.'
+              : 'This page demonstrates the fallback system when Directus is not available.'
+          }]
         }
       }
     ],
     seo: {
       id: '1',
-      title: isHome ? 'Nexpo - Your Event Platform' : 'About - Nexpo',
-      meta_description: isHome ? 'Discover amazing events with Nexpo' : 'Learn more about Nexpo platform'
+      title: isHome ? 'Demo Site' : 'About - Demo Site',
+      meta_description: 'Demo site running without Directus backend'
     }
   }
 }
 
-// Cache the getSite function to prevent multiple calls
-const getSite = cache(async (slug: string): Promise<Sites | null> => {
+// API Functions
+export const getSite = cache(async (slug: string): Promise<Sites | null> => {
   console.log('[getSite] Fetching site with slug:', slug)
   
-  // Skip if slug is default
   if (slug === 'default') {
     console.log('[getSite] Skipping fetch for default slug')
     return null
@@ -305,48 +268,31 @@ const getSite = cache(async (slug: string): Promise<Sites | null> => {
     const sites = await directusApi.request(
       withRevalidate(
         readItems('sites', {
-          filter: {
-            slug: {
-              _eq: slug
-            }
-          },
+          filter: { slug: { _eq: slug } },
           fields: ['*'],
           limit: 1
         }),
-        60
+        CACHE_TIMES.NAVIGATION
       )
     );
     return sites[0] || null
   }, getMockSite(slug), `getSite(${slug})`)
 })
 
-const fetchGlobals = async function (slug: string, lang: string): Promise<Globals | null> {
-  console.log('[fetchGlobals] Fetching globals for site:', slug, 'lang:', lang)
-  
+export const fetchGlobals = async function (slug: string, lang: SupportedLanguage): Promise<Globals | null> {
   const site = await getSite(slug)
-  console.log('[fetchGlobals] site:', site?.id || 'mock');
-  
-  if (!site) {
-    console.log('[fetchGlobals] No site found, using mock globals')
-    return getMockGlobals(lang)
-  }
+  if (!site) return getMockGlobals(lang)
+
+  const directusLang = getDirectusLanguage(lang)
 
   return await safeApiCall(async () => {
     const globals = await directusApi.request(
       withRevalidate(
         readItems('globals', {
-          filter: {
-            site_id: {
-              _eq: site.id
-            }
-          },
+          filter: { site_id: { _eq: site.id } },
           deep: {
             translations: {
-              _filter: {
-                languages_code: {
-                  _eq: lang,
-                },
-              },
+              _filter: { languages_code: { _eq: directusLang } },
             },
           },
           fields: [
@@ -362,33 +308,29 @@ const fetchGlobals = async function (slug: string, lang: string): Promise<Global
           ],
           limit: 1
         }),
-        60
+        CACHE_TIMES.GLOBALS
       )
     )
-    console.log('[fetchGlobals] globals from API:', globals?.[0]?.id || 'none');
     return globals[0] as Globals || null
   }, getMockGlobals(lang), `fetchGlobals(${slug}, ${lang})`)
 }
 
-const fetchNavigationSafe = async function (siteSlug: string, lang: string, type: 'main' | 'footer' = 'main'): Promise<Navigation | null> {
-  console.log('\n=== Fetch Navigation ===');
-  console.log('Site slug:', siteSlug);
-  console.log('Navigation type:', type);
-
+export const fetchNavigationSafe = async function (
+  siteSlug: string, 
+  lang: SupportedLanguage, 
+  type: 'main' | 'footer' = 'main'
+): Promise<Navigation | null> {
   const site = await getSite(siteSlug);
   if (!site) {
-    console.log('❌ No site found, using mock navigation');
     return getMockNavigation(siteSlug, lang, type);
   }
 
-  // Get navigation ID from site
   const navigationId = type === 'main' ? site.navigation?.[1] : site.navigation?.[0];
-  console.log('Navigation ID:', navigationId);
-
   if (!navigationId) {
-    console.log('❌ No navigation ID found, using mock navigation');
     return getMockNavigation(siteSlug, lang, type);
   }
+
+  const directusLang = getDirectusLanguage(lang)
 
   return await safeApiCall(async () => {
     const navigations = await directusApi.request(
@@ -396,12 +338,8 @@ const fetchNavigationSafe = async function (siteSlug: string, lang: string, type
         readItems('navigation', {
           limit: 1,
           filter: {
-            id: {
-              _eq: navigationId,
-            },
-            status: {
-              _eq: 'published',
-            },
+            id: { _eq: navigationId },
+            status: { _eq: 'published' },
           },
           fields: [
             'id',
@@ -415,55 +353,29 @@ const fetchNavigationSafe = async function (siteSlug: string, lang: string, type
                 {
                   page: [
                     'id',
-                    {
-                      translations: [
-                        'languages_code',
-                        'permalink'
-                      ]
-                    }
+                    { translations: ['languages_code', 'permalink'] }
                   ]
                 },
-                {
-                  translations: [
-                    'languages_code',
-                    'title'
-                  ]
-                }
+                { translations: ['languages_code', 'title'] }
               ]
             }
           ],
         }),
-        60
+        CACHE_TIMES.NAVIGATION
       )
     );
 
-    if (!navigations[0]) {
-      console.log('❌ No navigation found from API');
-      return null;
-    }
-
-    console.log('✅ Navigation found:', {
-      id: navigations[0].id,
-      items: navigations[0].items?.length || 0,
-    });
-
-    const langMap = { vi: 'vi-VN', en: 'en-US' } as const;
-    const directusLang = langMap[lang as keyof typeof langMap] || lang;
+    if (!navigations[0]) return null;
 
     const processedItems = (navigations[0].items || []).map((item) => {
-      const matchingTranslation = item.translations?.find(
-        (trans) => trans.languages_code === directusLang
-      ) || item.translations?.[0];
+      const translation = getBestTranslation(item.translations, directusLang)
 
       let href = '#';
       if (item.type === 'url' && item.url) {
         href = item.url;
       } else if (item.type === 'page' && item.page?.translations) {
-        const pageTrans = item.page.translations.find(
-          (trans) => trans.languages_code === directusLang
-        ) || item.page.translations[0];
+        const pageTrans = getBestTranslation(item.page.translations, directusLang)
         if (pageTrans?.permalink) {
-          // Multitenant-first: /[site]/[lang]/[permalink]
           href = `/${siteSlug}/${lang}${pageTrans.permalink.startsWith('/') ? '' : '/'}${pageTrans.permalink}`;
         }
       }
@@ -471,78 +383,87 @@ const fetchNavigationSafe = async function (siteSlug: string, lang: string, type
       return {
         ...item,
         href,
-        translations: matchingTranslation ? [{ title: matchingTranslation.title, languages_code: matchingTranslation.languages_code }] : [],
+        translations: translation ? [{ title: translation.title, languages_code: translation.languages_code }] : [],
       };
     });
 
-    const navigation: Navigation = {
+    return {
       id: navigations[0].id,
       status: navigations[0].status as 'published' | 'draft' | 'archived',
       type: navigations[0].type as 'main' | 'footer',
       items: processedItems,
     };
-
-    console.log('✅ Navigation processed successfully');
-    return navigation;
   }, getMockNavigation(siteSlug, lang, type), `fetchNavigation(${siteSlug}, ${lang}, ${type})`);
 };
 
-async function fetchForm(id: string, languages_code: string): Promise<Forms | null> {
+export const fetchPage = async function (
+  siteSlug: string, 
+  lang: SupportedLanguage, 
+  permalink: string = '/'
+): Promise<Pages | null> {
+  const site = await getSite(siteSlug);
+  if (!site) return getMockPage(permalink, lang);
+
+  const directusLang = getDirectusLanguage(lang)
+
   return await safeApiCall(async () => {
-    const forms = await directusApi.request(
+    const pages = await directusApi.request(
       withRevalidate(
-        readItems('forms', {
-          fields: [
-            '*', // Fetch all top-level fields (id, status, on_success, etc.)
-            {
-              fields: [ // Fetch related form fields
-                '*', // All fields in form_fields (id, name, type, width, etc.)
-                {
-                  translations: [ // Fetch translations for form fields
-                    'languages_code',
-                    'label',
-                    'placeholder',
-                    'help',
-                    'options',
-                  ],
-                },
-              ],
-            },
-            {
-              translations: [ // Fetch form translations
-                'languages_code',
-                'title',
-                'submit_label',
-                'success_message',
-              ],
-            },
-          ],
+        readItems('pages', {
           filter: {
-            id: { // Filter by form ID (not key, assuming id is used)
-              _eq: id,
-            },
+            site_id: { _eq: site.id },
+            translations: { permalink: { _eq: permalink } },
           },
+          fields: [
+            '*',
+            { translations: ['*'] },
+            { blocks: ['*', { item: ['*', { translations: ['*'] }] }] },
+            { seo: ['*'] },
+          ],
           deep: {
-            translations: {
-              _filter: {
-                languages_code: {
-                  _eq: languages_code, // Filter translations by language
-                },
-              },
-            },
-            fields: {
-              translations: {
-                _filter: {
-                  languages_code: {
-                    _eq: languages_code,
-                  },
-                },
+            translations: { _filter: { languages_code: { _eq: directusLang } } },
+            blocks: {
+              item: {
+                translations: { _filter: { languages_code: { _eq: directusLang } } },
               },
             },
           },
           limit: 1,
         }),
-        120 // Cache for 120 seconds
+        CACHE_TIMES.PAGES
+      )
+    );
+
+    return pages[0] || null;
+  }, getMockPage(permalink, lang), `fetchPage(${siteSlug}, ${lang}, ${permalink})`);
+}
+
+// Additional API functions with proper typing
+export async function fetchForm(id: string, languages_code: string): Promise<Forms | null> {
+  return await safeApiCall(async () => {
+    const forms = await directusApi.request(
+      withRevalidate(
+        readItems('forms', {
+          fields: [
+            '*',
+            {
+              fields: [
+                '*',
+                { translations: ['languages_code', 'label', 'placeholder', 'help', 'options'] },
+              ],
+            },
+            { translations: ['languages_code', 'title', 'submit_label', 'success_message'] },
+          ],
+          filter: { id: { _eq: id } },
+          deep: {
+            translations: { _filter: { languages_code: { _eq: languages_code } } },
+            fields: {
+              translations: { _filter: { languages_code: { _eq: languages_code } } },
+            },
+          },
+          limit: 1,
+        }),
+        CACHE_TIMES.FORMS
       )
     ) as unknown as Forms[];
 
@@ -550,50 +471,29 @@ async function fetchForm(id: string, languages_code: string): Promise<Forms | nu
   }, null, `fetchForm(${id}, ${languages_code})`)
 }
 
-async function fetchHelpCollections(lang: string): Promise<HelpCollections[]> {
+export async function fetchHelpCollections(lang: string): Promise<HelpCollections[]> {
   return await safeApiCall(async () => {
     const collections = await directusApi.request(
       readItems('help_collections', {
         filter: {},
         deep: {
-          translations: {
-            _filter: {
-              languages_code: {
-                _eq: lang,
-              },
-            },
-          },
+          translations: { _filter: { languages_code: { _eq: lang } } },
         },
         fields: ['cover', 'slug', { translations: ['title', 'description'] }],
       })
     )
-
     return collections as HelpCollections[]
   }, [], `fetchHelpCollections(${lang})`)
 }
 
-async function fetchHelpCollection(slug: string, lang: string): Promise<HelpCollections | null> {
+export async function fetchHelpCollection(slug: string, lang: string): Promise<HelpCollections | null> {
   return await safeApiCall(async () => {
     const collections = await directusApi.request(
       withRevalidate(
         readItems('help_collections', {
-          filter: {
-            _and: [
-              {
-                slug: {
-                  _eq: slug,
-                },
-              },
-            ],
-          },
+          filter: { slug: { _eq: slug } },
           deep: {
-            translations: {
-              _filter: {
-                languages_code: {
-                  _eq: lang,
-                },
-              },
-            },
+            translations: { _filter: { languages_code: { _eq: lang } } },
           },
           limit: 1,
           fields: ['slug', 'cover', { translations: ['title', 'description'] }],
@@ -601,10 +501,7 @@ async function fetchHelpCollection(slug: string, lang: string): Promise<HelpColl
         60
       )
     )
-
-    if (collections.length === 0) return null
-
-    return collections[0] as HelpCollections
+    return collections[0] as HelpCollections || null
   }, null, `fetchHelpCollection(${slug}, ${lang})`)
 }
 
@@ -614,34 +511,21 @@ export async function fetchHelpArticles(collectionSlug: string, lang: string): P
       withRevalidate(
         readItems('help_articles', {
           deep: {
-            translations: {
-              _filter: {
-                languages_code: {
-                  _eq: lang,
-                },
-              },
-            },
+            translations: { _filter: { languages_code: { _eq: lang } } },
           },
           filter: {
-            help_collection: {
-              slug: {
-                _eq: collectionSlug,
-              },
-            },
+            help_collection: { slug: { _eq: collectionSlug } },
           },
           fields: ['id', 'slug', { translations: ['title', 'summary'] }],
         }),
         60
       )
     )
-
-    if (articles.length === 0) return null
-
-    return articles as HelpArticles[]
+    return articles as HelpArticles[] || null
   }, null, `fetchHelpArticles(${collectionSlug}, ${lang})`)
 }
 
-async function fetchHelpArticle(
+export async function fetchHelpArticle(
   collectionSlug: string,
   slug: string,
   lang: string
@@ -650,55 +534,20 @@ async function fetchHelpArticle(
     const articles = await directusApi.request(
       readItems('help_articles', {
         filter: {
-          slug: {
-            _eq: slug,
-          },
-          status: {
-            _eq: 'published',
-          },
-          translations: {
-            _nnull: true,
-          },
-          help_collection: {
-            slug: {
-              _eq: collectionSlug,
-            },
-          },
+          slug: { _eq: slug },
+          status: { _eq: 'published' },
+          help_collection: { slug: { _eq: collectionSlug } },
         },
         deep: {
           help_collection: {
-            _filter: {
-              translations: {
-                _nnull: true,
-              },
-            },
-            translations: {
-              _filter: {
-                _and: [
-                  {
-                    languages_code: {
-                      _eq: lang,
-                    },
-                  },
-                ],
-              },
-              _limit: 1,
-            },
+            translations: { _filter: { languages_code: { _eq: lang } } },
           },
-          translations: {
-            _filter: {
-              languages_code: {
-                _eq: lang,
-              },
-            },
-          },
+          translations: { _filter: { languages_code: { _eq: lang } } },
         },
         limit: 1,
         fields: [
           '*',
-          {
-            help_collection: ['slug', 'id', { translations: ['title'] }],
-          },
+          { help_collection: ['slug', 'id', { translations: ['title'] }] },
           { owner: ['first_name', 'last_name', 'avatar'] },
           { translations: ['content', 'languages_code', 'summary', 'title'] },
         ],
@@ -708,213 +557,7 @@ async function fetchHelpArticle(
   }, null, `fetchHelpArticle(${collectionSlug}, ${slug}, ${lang})`)
 }
 
-// --- Field fragments for blocks ---
-const blockFormFields = [
-  '*',
-  {
-    form: [
-      '*', // Fetch all form fields
-      {
-        fields: [ // Fetch form fields (schema)
-          '*',
-          {
-            translations: ['languages_code', 'label', 'placeholder', 'help', 'options'],
-          },
-        ],
-      },
-      {
-        translations: ['languages_code', 'title', 'submit_label', 'success_message'],
-      },
-    ],
-  },
-  {
-    translations: ['title', 'headline', 'languages_code'],
-  },
-];
-
-const galleryItemFields = [
-  '*',
-  { directus_files_id: ['*'] },
-  {
-    translations: [
-      '*',
-      { title: ['*'], headline: ['*'] }
-    ]
-  }
-];
-
-const blockTeamFields = [
-  '*',
-  { team: [
-      '*',
-      { image: ['*'] },
-      { translations: ['bio', 'job_title', 'languages_code'] }
-    ]
-  },
-  {
-    translations: [
-      'title',
-      'headline',
-      'content',
-      'languages_code'
-    ]
-  }
-];
-
-const blockItemFields = [
-  '*',
-  { form: [
-    '*', 
-    { fields: [
-      '*',
-      { translations: ['*'] }] },
-    { translations: ['*'] }] },
-  { team: [
-      '*',
-      { image: ['*'] },
-      { translations: ['bio', 'job_title', 'languages_code'] }
-    ]
-  },
-  { translations: ['*', { faqs: ['*'] }] },
-  { button_group: ['*', { buttons: ['*', { translations: ['*'] }] }] },
-  { rows: ['*', { translations: ['*'] }] },
-  { steps: ['*', { translations: ['*'] }] },
-  { testimonials: [
-      '*',
-      { testimonials_id: ['*', { translations: ['*'] }] },
-      { translations: ['*'] }
-    ]
-  },
-  { logos: ['*', { directus_files_id: ['*'] }, { translations: ['*', 'title', 'headline'] }] },
-  { gallery_items: galleryItemFields },
-  { block_form: blockFormFields },
-  { block_team: blockTeamFields },
-];
-
-// --- Refactored fetchPage function ---
-async function fetchPage(siteSlug: string, lang: string, permalink: string = '/'): Promise<Pages | null> {
-  console.log('[fetchPage] Fetching page:', { siteSlug, lang, permalink })
-  
-  const site = await getSite(siteSlug);
-  if (!site) {
-    console.log('[fetchPage] No site found, using mock page')
-    return getMockPage(permalink, lang);
-  }
-
-  const langMap = { vi: 'vi-VN', en: 'en-US' } as const;
-  const langCode = langMap[lang as keyof typeof langMap] || lang;
-
-  return await safeApiCall(async () => {
-    console.log('[fetchPage] Querying Directus for page:', {
-      site_id: site.id,
-      permalink,
-      langCode
-    });
-
-    // First, let's try to find pages for this site
-    const allPages = await directusApi.request(
-      readItems('pages', {
-        filter: {
-          site_id: { _eq: site.id },
-          status: { _eq: 'published' }
-        },
-        fields: ['id', 'title', { translations: ['languages_code', 'permalink', 'title'] }],
-        limit: 100
-      })
-    );
-
-    console.log('[fetchPage] All pages for site:', allPages.map(p => ({
-      id: p.id,
-      title: p.title,
-      translations: p.translations?.map(t => ({ lang: t.languages_code, permalink: t.permalink }))
-    })));
-
-    // Now find the specific page
-    const pages = await directusApi.request(
-      withRevalidate(
-        readItems('pages', {
-          filter: {
-            site_id: { _eq: site.id },
-            status: { _eq: 'published' },
-            translations: { 
-              permalink: { _eq: permalink },
-              languages_code: { _eq: langCode }
-            },
-          },
-          fields: [
-            '*',
-            { translations: ['*'] },
-            { blocks: ['*', { item: blockItemFields }] },
-            { seo: ['*'] },
-            { site_id: ['*'] },
-          ],
-          deep: {
-            translations: { _filter: { languages_code: { _eq: langCode } } },
-            blocks: {
-              item: {
-                translations: { _filter: { languages_code: { _eq: langCode } } },
-                form: { // Add form-specific filtering
-                  translations: { _filter: { languages_code: { _eq: langCode } } },
-                  fields: {
-                    translations: { _filter: { languages_code: { _eq: langCode } } },
-                  },
-                },
-              },
-            },
-          },
-          limit: 1,
-        }),
-        60
-      )
-    );
-
-    if (!pages[0]) {
-      console.log('[fetchPage] No page found from API for permalink:', permalink);
-      console.log('[fetchPage] Trying alternative query without language filter...');
-      
-      // Try without language filter in case the page exists but translation doesn't
-      const pagesAlt = await directusApi.request(
-        readItems('pages', {
-          filter: {
-            site_id: { _eq: site.id },
-            status: { _eq: 'published' }
-          },
-          fields: [
-            '*',
-            { translations: ['*'] },
-            { blocks: ['*', { item: blockItemFields }] },
-            { seo: ['*'] },
-          ],
-          limit: 10,
-        })
-      );
-
-      console.log('[fetchPage] Alternative query found pages:', pagesAlt.map(p => ({
-        id: p.id,
-        title: p.title,
-        translations: p.translations?.map(t => ({ lang: t.languages_code, permalink: t.permalink }))
-      })));
-
-      // Find page with matching permalink in any translation
-      const matchingPage = pagesAlt.find(page => 
-        page.translations?.some(t => t.permalink === permalink)
-      );
-
-      if (matchingPage) {
-        console.log('[fetchPage] Found matching page via alternative query:', matchingPage.id);
-        return matchingPage;
-      }
-
-      return null;
-    }
-
-    console.log('[fetchPage] Page found from API:', pages[0].id);
-    console.log('[fetchPage] Page blocks count:', pages[0].blocks?.length || 0);
-    return pages[0];
-  }, getMockPage(permalink, langCode), `fetchPage(${siteSlug}, ${lang}, ${permalink})`);
-}
-
-async function fetchPost(slug: string, lang: string): Promise<Posts | null> {
+export async function fetchPost(slug: string, lang: string): Promise<Posts | null> {
   const site = await getSite(slug)
   if (!site) return null
 
@@ -922,13 +565,7 @@ async function fetchPost(slug: string, lang: string): Promise<Posts | null> {
     const posts = await directusApi.request(
       readItems('posts', {
         deep: {
-          translations: {
-            _filter: {
-              languages_code: {
-                _eq: lang,
-              },
-            },
-          },
+          translations: { _filter: { languages_code: { _eq: lang } } },
         },
         filter: { 
           slug: { _eq: slug },
@@ -944,23 +581,8 @@ async function fetchPost(slug: string, lang: string): Promise<Posts | null> {
         ],
       })
     )
-
-    if (posts.length === 0) return null
-
-    return posts[0] as Posts
+    return posts[0] as Posts || null
   }, null, `fetchPost(${slug}, ${lang})`)
 }
 
 export default directusApi
-
-export {
-  fetchGlobals,
-  fetchNavigationSafe,
-  fetchForm,
-  fetchHelpArticle,
-  fetchHelpCollection,
-  fetchHelpCollections,
-  fetchPage,
-  fetchPost,
-  getSite,
-}
