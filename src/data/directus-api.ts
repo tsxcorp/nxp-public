@@ -46,6 +46,11 @@ const withRevalidate = function <Schema extends object, Output>(
 
 // Check if we're in a development environment where Directus might not be available
 const isDirectusAvailable = async (): Promise<boolean> => {
+  // Check if fallback data is enabled - if so, skip Directus connection attempt
+  if (process.env.NEXT_PUBLIC_ENABLE_FALLBACK_DATA === 'true') {
+    return false
+  }
+
   try {
     const directusURL = getDirectusURL()
     const response = await fetch(`${directusURL}/server/ping`, {
