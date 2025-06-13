@@ -805,12 +805,41 @@ async function fetchPage(siteSlug: string, lang: string, permalink: string = '/'
   const langCode = langMap[lang as keyof typeof langMap] || lang;
 
   return await safeApiCall(async () => {
+    console.log('[fetchPage] Querying Directus for page:', {
+      site_id: site.id,
+      permalink,
+      langCode
+    });
+
+    // First, let's try to find pages for this site
+    const allPages = await directusApi.request(
+      readItems('pages', {
+        filter: {
+          site_id: { _eq: site.id },
+          status: { _eq: 'published' }
+        },
+        fields: ['id', 'title', { translations: ['languages_code', 'permalink', 'title'] }],
+        limit: 100
+      })
+    );
+
+    console.log('[fetchPage] All pages for site:', allPages.map(p => ({
+      id: p.id,
+      title: p.title,
+      translations: p.translations?.map(t => ({ lang: t.languages_code, permalink: t.permalink }))
+    })));
+
+    // Now find the specific page
     const pages = await directusApi.request(
       withRevalidate(
         readItems('pages', {
           filter: {
             site_id: { _eq: site.id },
-            translations: { permalink: { _eq: permalink } },
+            status: { _eq: 'published' },
+            translations: { 
+              permalink: { _eq: permalink },
+              languages_code: { _eq: langCode }
+            },
           },
           fields: [
             '*',
@@ -840,11 +869,47 @@ async function fetchPage(siteSlug: string, lang: string, permalink: string = '/'
     );
 
     if (!pages[0]) {
-      console.log('[fetchPage] No page found from API')
+      console.log('[fetchPage] No page found from API for permalink:', permalink);
+      console.log('[fetchPage] Trying alternative query without language filter...');
+      
+      // Try without language filter in case the page exists but translation doesn't
+      const pagesAlt = await directusApi.request(
+        readItems('pages', {
+          filter: {
+            site_id: { _eq: site.id },
+            status: { _eq: 'published' }
+          },
+          fields: [
+            '*',
+            { translations: ['*'] },
+            { blocks: ['*', { item: blockItemFields }] },
+            { seo: ['*'] },
+          ],
+          limit: 10,
+        })
+      );
+
+      console.log('[fetchPage] Alternative query found pages:', pagesAlt.map(p => ({
+        id: p.id,
+        title: p.title,
+        translations: p.translations?.map(t => ({ lang: t.languages_code, permalink: t.permalink }))
+      })));
+
+      // Find page with matching permalink in any translation
+      const matchingPage = pagesAlt.find(page => 
+        page.translations?.some(t => t.permalink === permalink)
+      );
+
+      if (matchingPage) {
+        console.log('[fetchPage] Found matching page via alternative query:', matchingPage.id);
+        return matchingPage;
+      }
+
       return null;
     }
 
     console.log('[fetchPage] Page found from API:', pages[0].id);
+    console.log('[fetchPage] Page blocks count:', pages[0].blocks?.length || 0);
     return pages[0];
   }, getMockPage(permalink, langCode), `fetchPage(${siteSlug}, ${lang}, ${permalink})`);
 }
