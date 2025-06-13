@@ -820,7 +820,9 @@ async function fetchPage(siteSlug: string, lang: string, permalink: string = '/'
         },
         fields: [
           '*',
-          { translations: ['languages_code', 'permalink', 'title'] }
+          { translations: [
+            '*',
+            'languages_code', 'permalink', 'title'] }
         ],
         limit: 50
       })
