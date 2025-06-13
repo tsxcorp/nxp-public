@@ -819,8 +819,7 @@ async function fetchPage(siteSlug: string, lang: string, permalink: string = '/'
           status: { _eq: 'published' }
         },
         fields: [
-          'id',
-          'title',
+          '*',
           { translations: ['languages_code', 'permalink', 'title'] }
         ],
         limit: 50
