@@ -8,96 +8,130 @@ import { fetchTeamMembers } from '@/data/fetch-team';
 import { PageProps } from '@/types/next';
 
 export default async function SlugPage({ params, searchParams }: PageProps) {
-  const [resolvedParams, resolvedSearchParams] = await Promise.all([
-    params,
-    searchParams
-  ]);
-  const { site, lang, slug } = resolvedParams;
-  
-  // Fetch site data to get siteId (if multi-tenant)
-  const siteData = await getSite(site);
+  try {
+    const [resolvedParams, resolvedSearchParams] = await Promise.all([
+      params,
+      searchParams
+    ]);
+    const { site, lang, slug } = resolvedParams;
+    
+    console.log('[SlugPage] Processing:', { site, lang, slug });
+    
+    // Fetch site data to get siteId (if multi-tenant)
+    const siteData = await getSite(site);
+    console.log('[SlugPage] Site data:', siteData?.id || 'mock');
 
-  // Fetch navigation (main/footer)
-  const [mainNav, footerNav] = await Promise.all([
-    fetchNavigationSafe(site, lang, 'main'),
-    fetchNavigationSafe(site, lang, 'footer')
-  ]);
+    // Fetch navigation (main/footer)
+    const [mainNav, footerNav] = await Promise.all([
+      fetchNavigationSafe(site, lang, 'main'),
+      fetchNavigationSafe(site, lang, 'footer')
+    ]);
 
-  // Fetch page content
-  // If no slug or slug is empty array, fetch homepage (permalink: "/")
-  // If slug is ['nexpo'], also fetch homepage
-  const pageSlug = !slug || slug.length === 0 || (slug.length === 1 && slug[0] === site) ? '/' : slug.join('/');
-  
-  const pageContent = await fetchPage(site, lang, pageSlug);
+    console.log('[SlugPage] Navigation loaded:', { 
+      mainNav: !!mainNav, 
+      footerNav: !!footerNav 
+    });
 
-  if (!pageContent) {
-    // If no page found, return 404
-    return (
-      <>
-        <TheHeader navigation={mainNav} lang={lang} />
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-          <div className="max-w-2xl mx-auto px-4 py-12">
-            <h1 className="text-3xl font-bold mb-4">404 - Page Not Found</h1>
-            <div className="mb-2">Site: <b>{site}</b></div>
-            <div className="mb-2">Lang: <b>{lang}</b></div>
-            <div className="mb-2">Slug: <b>{pageSlug}</b></div>
-            <div className="mt-4 p-4 bg-gray-100 rounded">
-              <h2 className="font-bold mb-2">Debug Info:</h2>
-              <pre className="text-sm">
-                {JSON.stringify({
-                  site,
-                  lang,
-                  slug,
-                  pageSlug,
-                  hasMainNav: !!mainNav,
-                  hasFooterNav: !!footerNav,
-                  searchParams: resolvedSearchParams
-                }, null, 2)}
-              </pre>
+    // Fetch page content
+    // If no slug or slug is empty array, fetch homepage (permalink: "/")
+    // If slug is ['nexpo'], also fetch homepage
+    const pageSlug = !slug || slug.length === 0 || (slug.length === 1 && slug[0] === site) ? '/' : slug.join('/');
+    
+    console.log('[SlugPage] Fetching page with permalink:', pageSlug);
+    const pageContent = await fetchPage(site, lang, pageSlug);
+
+    if (!pageContent) {
+      console.log('[SlugPage] No page content found');
+      // If no page found, return 404
+      return (
+        <>
+          <TheHeader navigation={mainNav} lang={lang} site={siteData} />
+          <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+            <div className="max-w-2xl mx-auto px-4 py-12">
+              <h1 className="text-3xl font-bold mb-4">404 - Page Not Found</h1>
+              <div className="mb-2">Site: <b>{site}</b></div>
+              <div className="mb-2">Lang: <b>{lang}</b></div>
+              <div className="mb-2">Slug: <b>{pageSlug}</b></div>
+              <div className="mt-4 p-4 bg-gray-100 rounded">
+                <h2 className="font-bold mb-2">Debug Info:</h2>
+                <pre className="text-sm">
+                  {JSON.stringify({
+                    site,
+                    lang,
+                    slug,
+                    pageSlug,
+                    hasMainNav: !!mainNav,
+                    hasFooterNav: !!footerNav,
+                    searchParams: resolvedSearchParams
+                  }, null, 2)}
+                </pre>
+              </div>
             </div>
           </div>
-        </div>
-        <TheFooter navigation={footerNav} lang={lang} />
-      </>
+          <TheFooter navigation={footerNav} lang={lang} />
+        </>
+      );
+    }
+
+    console.log('[SlugPage] Page content loaded:', pageContent.id);
+
+    // Defensive: translations is always array or []
+    const translations = Array.isArray(pageContent?.translations) ? (pageContent.translations as any[]) : [];
+    // Find translation khớp lang, fallback [0]
+    const firstTrans = (translations.find((t: any) => t.languages_code === (lang === 'en' ? 'en-US' : 'vi-VN')) || translations[0]) as {
+      title?: string;
+      languages_code?: string;
+    } | undefined;
+
+    // Fetch team members for each block_team block
+    const blocks = Array.isArray(pageContent.blocks) ? pageContent.blocks : [];
+    const teamMembersMap: Record<string, any[]> = {};
+    await Promise.all(
+      blocks.map(async (block: { collection: string; item?: { id: string } }) => {
+        if (block.collection === 'block_team' && block.item?.id) {
+          teamMembersMap[block.item.id] = await fetchTeamMembers(siteData?.id, block.item.id);
+        }
+      })
     );
-  }
 
-  // Defensive: translations is always array or []
-  const translations = Array.isArray(pageContent?.translations) ? (pageContent.translations as any[]) : [];
-  // Find translation khớp lang, fallback [0]
-  const firstTrans = (translations.find((t: any) => t.languages_code === (lang === 'en' ? 'en-US' : 'vi-VN')) || translations[0]) as {
-    title?: string;
-    languages_code?: string;
-  } | undefined;
+    console.log('[SlugPage] Rendering page with blocks:', blocks.length);
 
-  // Fetch team members for each block_team block
-  const blocks = Array.isArray(pageContent.blocks) ? pageContent.blocks : [];
-  const teamMembersMap: Record<string, any[]> = {};
-  await Promise.all(
-    blocks.map(async (block: { collection: string; item?: { id: string } }) => {
-      if (block.collection === 'block_team' && block.item?.id) {
-        teamMembersMap[block.item.id] = await fetchTeamMembers(siteData?.id, block.item.id);
-      }
-    })
-  );
-
-  return (
-    <>
-      <TheHeader navigation={mainNav} lang={lang} />
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-        <div className="max-w-2xl mx-auto px-4 py-12">
-          <h1 className="text-3xl font-bold mb-4">{firstTrans?.title || pageContent.title || 'Untitled'}</h1>
-          <div className="mb-2">Site: <b>{site}</b></div>
-          <div className="mb-2">Lang: <b>{lang}</b></div>
-          <div className="mb-2">Slug: <b>{pageSlug}</b></div>
+    return (
+      <>
+        <TheHeader navigation={mainNav} lang={lang} site={siteData} />
+        <div className="min-h-screen w-full bg-gray-50">
           <PageBuilder
             blocks={blocks}
             lang={lang}
             teamMembersMap={teamMembersMap}
           />
         </div>
+        <TheFooter navigation={footerNav} lang={lang} />
+      </>
+    );
+  } catch (error) {
+    console.error('[SlugPage] Error:', error);
+    
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+        <div className="max-w-2xl mx-auto px-4 py-12">
+          <h1 className="text-3xl font-bold mb-4 text-red-600">Error Loading Page</h1>
+          <p className="text-gray-600 mb-4">
+            There was an error loading the page content. This might be due to:
+          </p>
+          <ul className="list-disc list-inside text-gray-600 mb-4">
+            <li>Directus server is not running</li>
+            <li>Network connectivity issues</li>
+            <li>Invalid page configuration</li>
+          </ul>
+          <div className="mt-4 p-4 bg-red-50 rounded border border-red-200">
+            <h2 className="font-bold mb-2 text-red-800">Error Details:</h2>
+            <pre className="text-sm text-red-700 whitespace-pre-wrap">
+              {error instanceof Error ? error.message : String(error)}
+            </pre>
+          </div>
+        </div>
       </div>
-      <TheFooter navigation={footerNav} lang={lang} />
-    </>
-  );
+    );
+  }
 }

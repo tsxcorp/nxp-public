@@ -49,16 +49,20 @@ const withRevalidate = function <Schema extends object, Output>(
 const isDirectusAvailable = async (): Promise<boolean> => {
   // Check if fallback data is enabled - if so, skip Directus connection attempt
   if (process.env.NEXT_PUBLIC_ENABLE_FALLBACK_DATA === 'true') {
+    console.log('[Directus] Fallback data enabled, skipping connection check')
     return false
   }
 
   try {
     const directusURL = getDirectusURL()
+    console.log('[Directus] Checking availability at:', directusURL)
     const response = await fetch(`${directusURL}/server/ping`, {
       method: 'GET',
       signal: AbortSignal.timeout(5000), // 5 second timeout
     })
-    return response.ok
+    const available = response.ok
+    console.log('[Directus] Server available:', available)
+    return available
   } catch (error) {
     console.warn('[Directus] Server not available:', error)
     return false
@@ -69,7 +73,7 @@ const isDirectusAvailable = async (): Promise<boolean> => {
 const createDirectusClient = () => {
   try {
     const directusURL = getDirectusURL()
-    console.log('[Directus] Connecting to:', directusURL)
+    console.log('[Directus] Creating client for:', directusURL)
     
     return createDirectus<DirectusSchema>(directusURL)
       .with(
@@ -104,8 +108,9 @@ const directusApi = createDirectusClient()
 const adminToken = process.env.DIRECTUS_ADMIN_TOKEN
 if (adminToken && adminToken !== 'your-directus-admin-token') {
   directusApi.setToken(adminToken)
+  console.log('[Directus] Admin token set')
 } else {
-  console.warn('[Directus] No valid admin token found. Some operations may fail.')
+  console.warn('[Directus] No valid admin token found. Using fallback data.')
 }
 
 // Enhanced error handling wrapper for API calls with better fallbacks
@@ -118,11 +123,13 @@ const safeApiCall = async <T>(
     // Check if Directus is available before making the call
     const available = await isDirectusAvailable()
     if (!available) {
-      console.warn(`[Directus API] Server not available for ${operationName}, returning fallback`)
+      console.warn(`[Directus API] Server not available for ${operationName}, using fallback`)
       return fallback
     }
     
-    return await apiCall()
+    const result = await apiCall()
+    console.log(`[Directus API] ${operationName} successful`)
+    return result
   } catch (error) {
     console.error(`[Directus API] ${operationName} failed:`, error)
     if (error instanceof Error) {
@@ -132,6 +139,7 @@ const safeApiCall = async <T>(
         console.error('[Directus API] Request timeout - Directus server is not responding')
       }
     }
+    console.warn(`[Directus API] Using fallback for ${operationName}`)
     return fallback
   }
 }
@@ -145,7 +153,7 @@ const getMockSite = (slug: string): Sites | null => {
     slug: slug,
     navigation: ['1', '2'], // footer, main
     status: 'published',
-    title: `${slug} Site`
+    title: `${slug.charAt(0).toUpperCase() + slug.slice(1)} Site`
   }
 }
 
@@ -237,11 +245,11 @@ const getMockPage = (permalink: string, lang: string): Pages => {
     id: isHome ? '1' : '2',
     status: 'published',
     site_id: '1',
-    title: isHome ? 'Welcome' : 'About Us',
+    title: isHome ? 'Welcome to Nexpo' : 'About Us',
     translations: [{
       id: isHome ? '1' : '2',
       languages_code: lang,
-      title: isHome ? 'Welcome' : 'About Us',
+      title: isHome ? 'Welcome to Nexpo' : 'About Us',
       permalink: permalink,
     }],
     blocks: [
@@ -252,21 +260,33 @@ const getMockPage = (permalink: string, lang: string): Pages => {
           id: '1',
           translations: [{
             languages_code: lang,
-            title: isHome ? 'Demo Site' : 'About Us',
+            title: isHome ? 'Welcome to Nexpo' : 'About Us',
             headline: isHome 
-              ? 'This site is running in demo mode without Directus backend'
-              : 'Learn more about our demo site',
+              ? 'Your Gateway to Amazing Events'
+              : 'Learn More About Our Platform',
             content: isHome
-              ? 'The application is working properly, but no Directus server is connected.'
-              : 'This page demonstrates the fallback system when Directus is not available.'
-          }]
+              ? 'Discover, connect, and explore the most exciting events and exhibitions with Nexpo.'
+              : 'Nexpo is a comprehensive platform for event management and discovery.'
+          }],
+          buttons: isHome ? [{
+            id: '1',
+            label: 'Get Started',
+            href: `/${lang}/about`,
+            open_in_new_window: false,
+            variant: 'solid',
+            translations: [{
+              label: 'Get Started',
+              href: `/${lang}/about`,
+              languages_code: lang
+            }]
+          }] : []
         }
       }
     ],
     seo: {
       id: '1',
-      title: isHome ? 'Demo Site' : 'About - Demo Site',
-      meta_description: 'Demo site running without Directus backend'
+      title: isHome ? 'Nexpo - Your Event Platform' : 'About - Nexpo',
+      meta_description: isHome ? 'Discover amazing events with Nexpo' : 'Learn more about Nexpo platform'
     }
   }
 }
@@ -301,9 +321,15 @@ const getSite = cache(async (slug: string): Promise<Sites | null> => {
 })
 
 const fetchGlobals = async function (slug: string, lang: string): Promise<Globals | null> {
+  console.log('[fetchGlobals] Fetching globals for site:', slug, 'lang:', lang)
+  
   const site = await getSite(slug)
-  console.log('[fetchGlobals] site:', JSON.stringify(site, null, 2));
-  if (!site) return null
+  console.log('[fetchGlobals] site:', site?.id || 'mock');
+  
+  if (!site) {
+    console.log('[fetchGlobals] No site found, using mock globals')
+    return getMockGlobals(lang)
+  }
 
   return await safeApiCall(async () => {
     const globals = await directusApi.request(
@@ -339,7 +365,7 @@ const fetchGlobals = async function (slug: string, lang: string): Promise<Global
         60
       )
     )
-    console.log('[fetchGlobals] globals:', JSON.stringify(globals, null, 2));
+    console.log('[fetchGlobals] globals from API:', globals?.[0]?.id || 'none');
     return globals[0] as Globals || null
   }, getMockGlobals(lang), `fetchGlobals(${slug}, ${lang})`)
 }
@@ -351,7 +377,7 @@ const fetchNavigationSafe = async function (siteSlug: string, lang: string, type
 
   const site = await getSite(siteSlug);
   if (!site) {
-    console.log('❌ No site found');
+    console.log('❌ No site found, using mock navigation');
     return getMockNavigation(siteSlug, lang, type);
   }
 
@@ -360,7 +386,7 @@ const fetchNavigationSafe = async function (siteSlug: string, lang: string, type
   console.log('Navigation ID:', navigationId);
 
   if (!navigationId) {
-    console.log('❌ No navigation ID found');
+    console.log('❌ No navigation ID found, using mock navigation');
     return getMockNavigation(siteSlug, lang, type);
   }
 
@@ -412,7 +438,7 @@ const fetchNavigationSafe = async function (siteSlug: string, lang: string, type
     );
 
     if (!navigations[0]) {
-      console.log('❌ No navigation found');
+      console.log('❌ No navigation found from API');
       return null;
     }
 
@@ -456,7 +482,7 @@ const fetchNavigationSafe = async function (siteSlug: string, lang: string, type
       items: processedItems,
     };
 
-    console.dir(navigation.items, { depth: null });
+    console.log('✅ Navigation processed successfully');
     return navigation;
   }, getMockNavigation(siteSlug, lang, type), `fetchNavigation(${siteSlug}, ${lang}, ${type})`);
 };
@@ -767,8 +793,13 @@ const blockItemFields = [
 
 // --- Refactored fetchPage function ---
 async function fetchPage(siteSlug: string, lang: string, permalink: string = '/'): Promise<Pages | null> {
+  console.log('[fetchPage] Fetching page:', { siteSlug, lang, permalink })
+  
   const site = await getSite(siteSlug);
-  if (!site) return getMockPage(permalink, lang);
+  if (!site) {
+    console.log('[fetchPage] No site found, using mock page')
+    return getMockPage(permalink, lang);
+  }
 
   const langMap = { vi: 'vi-VN', en: 'en-US' } as const;
   const langCode = langMap[lang as keyof typeof langMap] || lang;
@@ -808,29 +839,12 @@ async function fetchPage(siteSlug: string, lang: string, permalink: string = '/'
       )
     );
 
-    if (!pages[0]) return null;
-
-    // Log toàn bộ trang để kiểm tra cấu trúc
-    console.log('[fetchPage] Full Page Data:', JSON.stringify(pages[0], null, 2));
-
-    // Log blocks trực tiếp từ pages.blocks
-    if (Array.isArray(pages[0].blocks)) {
-      console.log('[fetchPage] Blocks:', JSON.stringify(pages[0].blocks, null, 2));
-      // Log button group and button data for each block
-      pages[0].blocks.forEach((block, index) => {
-        if (block.item?.button_group) {
-          console.log(`[fetchPage] Block ${index} button_group:`, JSON.stringify(block.item.button_group, null, 2));
-          if (block.item.button_group.buttons) {
-            console.log(`[fetchPage] Block ${index} buttons:`, JSON.stringify(block.item.button_group.buttons, null, 2));
-          }
-        }
-      });
-    } else {
-      console.log('[fetchPage] No blocks found in pages.');
+    if (!pages[0]) {
+      console.log('[fetchPage] No page found from API')
+      return null;
     }
 
-    console.log('Blocks for PageBuilder:', pages[0].blocks);
-
+    console.log('[fetchPage] Page found from API:', pages[0].id);
     return pages[0];
   }, getMockPage(permalink, langCode), `fetchPage(${siteSlug}, ${lang}, ${permalink})`);
 }
