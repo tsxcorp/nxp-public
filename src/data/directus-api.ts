@@ -16,6 +16,7 @@ import {
   Navigation,
   Pages,
   Posts,
+  Sites,
 } from '@/data/directus-collections'
 import { DirectusSchema } from '@/data/directus-schema'
 import { cache } from 'react'
@@ -136,64 +137,90 @@ const safeApiCall = async <T>(
 }
 
 // Mock data for fallback when Directus is not available
-const getMockSite = (slug: string) => {
+const getMockSite = (slug: string): Sites | null => {
   if (slug === 'default') return null
   
   return {
-    id: 1,
+    id: '1',
     slug: slug,
-    navigation: [1, 2], // footer, main
-    status: 'published'
+    navigation: ['1', '2'], // footer, main
+    status: 'published',
+    title: `${slug} Site`
   }
 }
 
 const getMockGlobals = (lang: string): Globals => ({
-  id: 1,
-  site_id: 1,
-  theme: 'light',
+  id: '1',
+  site_id: '1',
+  theme: {
+    primary: '#1E40AF',
+    gray: '#374151',
+    borderRadius: '1rem',
+    fonts: {
+      families: {
+        display: 'Poppins, sans-serif',
+        body: 'Inter, sans-serif',
+        code: 'Fira Code, monospace'
+      }
+    }
+  },
   translations: [{
+    id: 1,
     languages_code: lang,
+    title: 'Demo Site',
+    description: 'A demo site running without Directus backend',
     project_setting: {
+      id: '1',
       title: 'Demo Site',
-      description: 'A demo site running without Directus backend'
+      seo: {
+        id: '1',
+        title: 'Demo Site',
+        meta_description: 'A demo site running without Directus backend'
+      }
     },
     blog_setting: {
+      id: '1',
       title: 'Blog',
-      description: 'Demo blog'
+      headline: 'Demo blog',
+      seo: {
+        id: '1',
+        title: 'Blog',
+        meta_description: 'Demo blog'
+      }
     }
   }]
 })
 
 const getMockNavigation = (siteSlug: string, lang: string, type: 'main' | 'footer' = 'main'): Navigation => ({
-  id: type === 'main' ? 2 : 1,
+  id: type === 'main' ? '2' : '1',
   status: 'published',
   type: type,
   items: type === 'main' ? [
     {
-      id: 1,
+      id: '1',
       type: 'page',
       url: null,
       href: `/${siteSlug}/${lang}/`,
       page: {
-        id: 1,
+        id: '1',
         translations: [{ languages_code: lang, permalink: '/' }]
       },
       translations: [{ title: 'Home', languages_code: lang }]
     },
     {
-      id: 2,
+      id: '2',
       type: 'page',
       url: null,
       href: `/${siteSlug}/${lang}/about`,
       page: {
-        id: 2,
+        id: '2',
         translations: [{ languages_code: lang, permalink: '/about' }]
       },
       translations: [{ title: 'About', languages_code: lang }]
     }
   ] : [
     {
-      id: 3,
+      id: '3',
       type: 'url',
       url: '#',
       href: '#',
@@ -203,27 +230,26 @@ const getMockNavigation = (siteSlug: string, lang: string, type: 'main' | 'foote
   ]
 })
 
-const getMockPage = (permalink: string, lang: string) => {
+const getMockPage = (permalink: string, lang: string): Pages => {
   const isHome = permalink === '/'
   
   return {
-    id: isHome ? 1 : 2,
+    id: isHome ? '1' : '2',
     status: 'published',
-    site_id: 1,
+    site_id: '1',
+    title: isHome ? 'Welcome' : 'About Us',
     translations: [{
+      id: isHome ? '1' : '2',
       languages_code: lang,
       title: isHome ? 'Welcome' : 'About Us',
       permalink: permalink,
-      content: isHome 
-        ? 'Welcome to our demo site. This is running without a Directus backend.'
-        : 'This is the about page of our demo site.'
     }],
     blocks: [
       {
-        id: 1,
+        id: '1',
         collection: 'block_hero',
         item: {
-          id: 1,
+          id: '1',
           translations: [{
             languages_code: lang,
             title: isHome ? 'Demo Site' : 'About Us',
@@ -238,14 +264,15 @@ const getMockPage = (permalink: string, lang: string) => {
       }
     ],
     seo: {
+      id: '1',
       title: isHome ? 'Demo Site' : 'About - Demo Site',
-      description: 'Demo site running without Directus backend'
+      meta_description: 'Demo site running without Directus backend'
     }
   }
 }
 
 // Cache the getSite function to prevent multiple calls
-const getSite = cache(async (slug: string) => {
+const getSite = cache(async (slug: string): Promise<Sites | null> => {
   console.log('[getSite] Fetching site with slug:', slug)
   
   // Skip if slug is default
@@ -269,11 +296,11 @@ const getSite = cache(async (slug: string) => {
         60
       )
     );
-    return sites[0]
+    return sites[0] || null
   }, getMockSite(slug), `getSite(${slug})`)
 })
 
-const fetchGlobals = async function name(slug: string, lang: string) {
+const fetchGlobals = async function (slug: string, lang: string): Promise<Globals | null> {
   const site = await getSite(slug)
   console.log('[fetchGlobals] site:', JSON.stringify(site, null, 2));
   if (!site) return null
@@ -313,11 +340,11 @@ const fetchGlobals = async function name(slug: string, lang: string) {
       )
     )
     console.log('[fetchGlobals] globals:', JSON.stringify(globals, null, 2));
-    return globals[0] as Globals
+    return globals[0] as Globals || null
   }, getMockGlobals(lang), `fetchGlobals(${slug}, ${lang})`)
 }
 
-const fetchNavigationSafe = async function name(siteSlug: string, lang: string, type: 'main' | 'footer' = 'main'): Promise<Navigation | null> {
+const fetchNavigationSafe = async function (siteSlug: string, lang: string, type: 'main' | 'footer' = 'main'): Promise<Navigation | null> {
   console.log('\n=== Fetch Navigation ===');
   console.log('Site slug:', siteSlug);
   console.log('Navigation type:', type);
@@ -325,12 +352,17 @@ const fetchNavigationSafe = async function name(siteSlug: string, lang: string, 
   const site = await getSite(siteSlug);
   if (!site) {
     console.log('❌ No site found');
-    return null;
+    return getMockNavigation(siteSlug, lang, type);
   }
 
   // Get navigation ID from site
-  const navigationId = type === 'main' ? site.navigation[1] : site.navigation[0];
+  const navigationId = type === 'main' ? site.navigation?.[1] : site.navigation?.[0];
   console.log('Navigation ID:', navigationId);
+
+  if (!navigationId) {
+    console.log('❌ No navigation ID found');
+    return getMockNavigation(siteSlug, lang, type);
+  }
 
   return await safeApiCall(async () => {
     const navigations = await directusApi.request(
@@ -392,10 +424,10 @@ const fetchNavigationSafe = async function name(siteSlug: string, lang: string, 
     const langMap = { vi: 'vi-VN', en: 'en-US' } as const;
     const directusLang = langMap[lang as keyof typeof langMap] || lang;
 
-    const processedItems = navigations[0].items.map((item) => {
-      const matchingTranslation = item.translations.find(
+    const processedItems = (navigations[0].items || []).map((item) => {
+      const matchingTranslation = item.translations?.find(
         (trans) => trans.languages_code === directusLang
-      ) || item.translations[0];
+      ) || item.translations?.[0];
 
       let href = '#';
       if (item.type === 'url' && item.url) {
@@ -429,7 +461,7 @@ const fetchNavigationSafe = async function name(siteSlug: string, lang: string, 
   }, getMockNavigation(siteSlug, lang, type), `fetchNavigation(${siteSlug}, ${lang}, ${type})`);
 };
 
-async function fetchForm(id: string, languages_code: string) {
+async function fetchForm(id: string, languages_code: string): Promise<Forms | null> {
   return await safeApiCall(async () => {
     const forms = await directusApi.request(
       withRevalidate(
@@ -488,11 +520,11 @@ async function fetchForm(id: string, languages_code: string) {
       )
     ) as unknown as Forms[];
 
-    return forms[0];
+    return forms[0] || null;
   }, null, `fetchForm(${id}, ${languages_code})`)
 }
 
-async function fetchHelpCollections(lang: string) {
+async function fetchHelpCollections(lang: string): Promise<HelpCollections[]> {
   return await safeApiCall(async () => {
     const collections = await directusApi.request(
       readItems('help_collections', {
@@ -510,12 +542,11 @@ async function fetchHelpCollections(lang: string) {
       })
     )
 
-    // @ts-ignore
     return collections as HelpCollections[]
   }, [], `fetchHelpCollections(${lang})`)
 }
 
-async function fetchHelpCollection(slug: string, lang: string) {
+async function fetchHelpCollection(slug: string, lang: string): Promise<HelpCollections | null> {
   return await safeApiCall(async () => {
     const collections = await directusApi.request(
       withRevalidate(
@@ -551,7 +582,7 @@ async function fetchHelpCollection(slug: string, lang: string) {
   }, null, `fetchHelpCollection(${slug}, ${lang})`)
 }
 
-export async function fetchHelpArticles(collectionSlug: string, lang: string) {
+export async function fetchHelpArticles(collectionSlug: string, lang: string): Promise<HelpArticles[] | null> {
   return await safeApiCall(async () => {
     const articles = await directusApi.request(
       withRevalidate(
@@ -580,7 +611,7 @@ export async function fetchHelpArticles(collectionSlug: string, lang: string) {
 
     if (articles.length === 0) return null
 
-    return articles
+    return articles as HelpArticles[]
   }, null, `fetchHelpArticles(${collectionSlug}, ${lang})`)
 }
 
@@ -588,7 +619,7 @@ async function fetchHelpArticle(
   collectionSlug: string,
   slug: string,
   lang: string
-) {
+): Promise<HelpArticles | null> {
   return await safeApiCall(async () => {
     const articles = await directusApi.request(
       readItems('help_articles', {
@@ -647,8 +678,7 @@ async function fetchHelpArticle(
         ],
       })
     )
-    // @ts-ignore
-    return articles[0] as HelpArticles
+    return articles[0] as HelpArticles || null
   }, null, `fetchHelpArticle(${collectionSlug}, ${slug}, ${lang})`)
 }
 
@@ -736,9 +766,9 @@ const blockItemFields = [
 ];
 
 // --- Refactored fetchPage function ---
-async function fetchPage(siteSlug: string, lang: string, permalink: string = '/') {
+async function fetchPage(siteSlug: string, lang: string, permalink: string = '/'): Promise<Pages | null> {
   const site = await getSite(siteSlug);
-  if (!site) return null;
+  if (!site) return getMockPage(permalink, lang);
 
   const langMap = { vi: 'vi-VN', en: 'en-US' } as const;
   const langCode = langMap[lang as keyof typeof langMap] || lang;
@@ -805,7 +835,7 @@ async function fetchPage(siteSlug: string, lang: string, permalink: string = '/'
   }, getMockPage(permalink, langCode), `fetchPage(${siteSlug}, ${lang}, ${permalink})`);
 }
 
-async function fetchPost(slug: string, lang: string) {
+async function fetchPost(slug: string, lang: string): Promise<Posts | null> {
   const site = await getSite(slug)
   if (!site) return null
 

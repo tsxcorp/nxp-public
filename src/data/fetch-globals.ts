@@ -18,7 +18,7 @@ const defaultGlobalData = {
 
 const data = async ({ locale, params }: PageContextServer) => {
   // If no params or slug, return default structure
-  if (!params?.slug) {
+  if (!params?.site) {
     return {
       globalData: defaultGlobalData,
       mainNavData: null,
@@ -28,7 +28,7 @@ const data = async ({ locale, params }: PageContextServer) => {
   }
 
   // Skip if slug is default
-  if (params.slug === 'default') {
+  if (params.site === 'default') {
     return {
       globalData: defaultGlobalData,
       mainNavData: null,
@@ -38,9 +38,9 @@ const data = async ({ locale, params }: PageContextServer) => {
   }
 
   const [mainNavData, footerNavData, globalData] = await Promise.all([
-    fetchNavigationSafe(params.slug, locale, 'main'),
-    fetchNavigationSafe(params.slug, locale, 'footer'),
-    fetchGlobals(params.slug, locale),
+    fetchNavigationSafe(params.site, locale, 'main'),
+    fetchNavigationSafe(params.site, locale, 'footer'),
+    fetchGlobals(params.site, locale),
   ])
 
   // If site not found, return default structure

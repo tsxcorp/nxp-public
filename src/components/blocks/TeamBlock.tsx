@@ -1,18 +1,11 @@
 'use client'
 import React, { ReactElement } from 'react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import useResizeObserver from '@/lib/hooks/useResizeObserver'
-import { useIntersection } from 'react-use'
-import directusApi from '@/data/directus-api'
-import { readItems } from '@directus/sdk'
 import BlockContainer from '@/components/BlockContainer'
 import TypographyTitle from '@/components/typography/TypographyTitle'
 import TypographyHeadline from '@/components/typography/TypographyHeadline'
 import TypographyProse from '@/components/typography/TypographyProse'
-import TeamCard from '@/components/TeamCard'
-import { BlockTeam, Team } from '@/data/directus-collections'
+import { BlockTeam } from '@/data/directus-collections'
 import { getDirectusMedia } from '@/lib/utils/directus-helpers'
-import { motion } from 'framer-motion'
 import Image from 'next/image'
 
 interface SocialMedia {
@@ -36,10 +29,7 @@ interface TeamMember {
 }
 
 interface TeamBlockProps {
-  data: {
-    title?: string
-    headline?: string
-    content?: string
+  data: BlockTeam & {
     translations?: Array<{
       title?: string
       headline?: string
@@ -66,12 +56,11 @@ const TeamBlock = ({ data, lang, teams = [] }: TeamBlockProps) => {
   });
 
   // Translation logic
-  const translation =
-    data.translations?.find(
-      t =>
-        t.languages_code === lang ||
-        (t.languages_code && lang && t.languages_code.toLowerCase().startsWith(lang.toLowerCase() + '-'))
-    );
+  const directusLang = lang === 'en' ? 'en-US' : 'vi-VN'
+  const translation = data.translations?.find(
+    t => t.languages_code === directusLang
+  ) || data.translations?.[0];
+  
   const title = translation?.title || data.title;
   const headline = translation?.headline || data.headline;
   const content = translation?.content || data.content;
@@ -106,7 +95,7 @@ const TeamBlock = ({ data, lang, teams = [] }: TeamBlockProps) => {
                 imageUrl = getDirectusMedia(member.image.id);
               }
               const memberTranslation = member.translations?.find(
-                t => t.languages_code === lang || (t.languages_code && lang && t.languages_code.toLowerCase().startsWith(lang.toLowerCase() + '-'))
+                t => t.languages_code === directusLang
               );
               const displayJobTitle = memberTranslation?.job_title || member.job_title;
               const displayBio = memberTranslation?.bio || member.bio;
