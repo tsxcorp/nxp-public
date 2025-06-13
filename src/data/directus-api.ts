@@ -44,6 +44,21 @@ const withRevalidate = function <Schema extends object, Output>(
   }
 }
 
+// Check if we're in a development environment where Directus might not be available
+const isDirectusAvailable = async (): Promise<boolean> => {
+  try {
+    const directusURL = getDirectusURL()
+    const response = await fetch(`${directusURL}/server/ping`, {
+      method: 'GET',
+      signal: AbortSignal.timeout(5000), // 5 second timeout
+    })
+    return response.ok
+  } catch (error) {
+    console.warn('[Directus] Server not available:', error)
+    return false
+  }
+}
+
 // Add error handling for Directus connection
 const createDirectusClient = () => {
   try {
@@ -87,16 +102,140 @@ if (adminToken && adminToken !== 'your-directus-admin-token') {
   console.warn('[Directus] No valid admin token found. Some operations may fail.')
 }
 
-// Add error handling wrapper for API calls
-const safeApiCall = async <T>(apiCall: () => Promise<T>, fallback: T | null = null): Promise<T | null> => {
+// Enhanced error handling wrapper for API calls with better fallbacks
+const safeApiCall = async <T>(
+  apiCall: () => Promise<T>, 
+  fallback: T | null = null,
+  operationName: string = 'API call'
+): Promise<T | null> => {
   try {
+    // Check if Directus is available before making the call
+    const available = await isDirectusAvailable()
+    if (!available) {
+      console.warn(`[Directus API] Server not available for ${operationName}, returning fallback`)
+      return fallback
+    }
+    
     return await apiCall()
   } catch (error) {
-    console.error('[Directus API] Request failed:', error)
-    if (error instanceof Error && error.message.includes('fetch failed')) {
-      console.error('[Directus API] Connection error - check if Directus server is running and accessible')
+    console.error(`[Directus API] ${operationName} failed:`, error)
+    if (error instanceof Error) {
+      if (error.message.includes('fetch failed') || error.message.includes('Failed to fetch')) {
+        console.error('[Directus API] Connection error - Directus server is not running or not accessible')
+      } else if (error.message.includes('timeout')) {
+        console.error('[Directus API] Request timeout - Directus server is not responding')
+      }
     }
     return fallback
+  }
+}
+
+// Mock data for fallback when Directus is not available
+const getMockSite = (slug: string) => {
+  if (slug === 'default') return null
+  
+  return {
+    id: 1,
+    slug: slug,
+    navigation: [1, 2], // footer, main
+    status: 'published'
+  }
+}
+
+const getMockGlobals = (lang: string): Globals => ({
+  id: 1,
+  site_id: 1,
+  theme: 'light',
+  translations: [{
+    languages_code: lang,
+    project_setting: {
+      title: 'Demo Site',
+      description: 'A demo site running without Directus backend'
+    },
+    blog_setting: {
+      title: 'Blog',
+      description: 'Demo blog'
+    }
+  }]
+})
+
+const getMockNavigation = (siteSlug: string, lang: string, type: 'main' | 'footer' = 'main'): Navigation => ({
+  id: type === 'main' ? 2 : 1,
+  status: 'published',
+  type: type,
+  items: type === 'main' ? [
+    {
+      id: 1,
+      type: 'page',
+      url: null,
+      href: `/${siteSlug}/${lang}/`,
+      page: {
+        id: 1,
+        translations: [{ languages_code: lang, permalink: '/' }]
+      },
+      translations: [{ title: 'Home', languages_code: lang }]
+    },
+    {
+      id: 2,
+      type: 'page',
+      url: null,
+      href: `/${siteSlug}/${lang}/about`,
+      page: {
+        id: 2,
+        translations: [{ languages_code: lang, permalink: '/about' }]
+      },
+      translations: [{ title: 'About', languages_code: lang }]
+    }
+  ] : [
+    {
+      id: 3,
+      type: 'url',
+      url: '#',
+      href: '#',
+      page: null,
+      translations: [{ title: 'Privacy', languages_code: lang }]
+    }
+  ]
+})
+
+const getMockPage = (permalink: string, lang: string) => {
+  const isHome = permalink === '/'
+  
+  return {
+    id: isHome ? 1 : 2,
+    status: 'published',
+    site_id: 1,
+    translations: [{
+      languages_code: lang,
+      title: isHome ? 'Welcome' : 'About Us',
+      permalink: permalink,
+      content: isHome 
+        ? 'Welcome to our demo site. This is running without a Directus backend.'
+        : 'This is the about page of our demo site.'
+    }],
+    blocks: [
+      {
+        id: 1,
+        collection: 'block_hero',
+        item: {
+          id: 1,
+          translations: [{
+            languages_code: lang,
+            title: isHome ? 'Demo Site' : 'About Us',
+            headline: isHome 
+              ? 'This site is running in demo mode without Directus backend'
+              : 'Learn more about our demo site',
+            content: isHome
+              ? 'The application is working properly, but no Directus server is connected.'
+              : 'This page demonstrates the fallback system when Directus is not available.'
+          }]
+        }
+      }
+    ],
+    seo: {
+      title: isHome ? 'Demo Site' : 'About - Demo Site',
+      description: 'Demo site running without Directus backend'
+    }
   }
 }
 
@@ -126,7 +265,7 @@ const getSite = cache(async (slug: string) => {
       )
     );
     return sites[0]
-  })
+  }, getMockSite(slug), `getSite(${slug})`)
 })
 
 const fetchGlobals = async function name(slug: string, lang: string) {
@@ -170,7 +309,7 @@ const fetchGlobals = async function name(slug: string, lang: string) {
     )
     console.log('[fetchGlobals] globals:', JSON.stringify(globals, null, 2));
     return globals[0] as Globals
-  })
+  }, getMockGlobals(lang), `fetchGlobals(${slug}, ${lang})`)
 }
 
 const fetchNavigationSafe = async function name(siteSlug: string, lang: string, type: 'main' | 'footer' = 'main'): Promise<Navigation | null> {
@@ -282,7 +421,7 @@ const fetchNavigationSafe = async function name(siteSlug: string, lang: string, 
 
     console.dir(navigation.items, { depth: null });
     return navigation;
-  });
+  }, getMockNavigation(siteSlug, lang, type), `fetchNavigation(${siteSlug}, ${lang}, ${type})`);
 };
 
 async function fetchForm(id: string, languages_code: string) {
@@ -345,7 +484,7 @@ async function fetchForm(id: string, languages_code: string) {
     ) as unknown as Forms[];
 
     return forms[0];
-  })
+  }, null, `fetchForm(${id}, ${languages_code})`)
 }
 
 async function fetchHelpCollections(lang: string) {
@@ -368,7 +507,7 @@ async function fetchHelpCollections(lang: string) {
 
     // @ts-ignore
     return collections as HelpCollections[]
-  }, [])
+  }, [], `fetchHelpCollections(${lang})`)
 }
 
 async function fetchHelpCollection(slug: string, lang: string) {
@@ -404,7 +543,7 @@ async function fetchHelpCollection(slug: string, lang: string) {
     if (collections.length === 0) return null
 
     return collections[0] as HelpCollections
-  })
+  }, null, `fetchHelpCollection(${slug}, ${lang})`)
 }
 
 export async function fetchHelpArticles(collectionSlug: string, lang: string) {
@@ -437,7 +576,7 @@ export async function fetchHelpArticles(collectionSlug: string, lang: string) {
     if (articles.length === 0) return null
 
     return articles
-  })
+  }, null, `fetchHelpArticles(${collectionSlug}, ${lang})`)
 }
 
 async function fetchHelpArticle(
@@ -505,7 +644,7 @@ async function fetchHelpArticle(
     )
     // @ts-ignore
     return articles[0] as HelpArticles
-  })
+  }, null, `fetchHelpArticle(${collectionSlug}, ${slug}, ${lang})`)
 }
 
 // --- Field fragments for blocks ---
@@ -658,7 +797,7 @@ async function fetchPage(siteSlug: string, lang: string, permalink: string = '/'
     console.log('Blocks for PageBuilder:', pages[0].blocks);
 
     return pages[0];
-  });
+  }, getMockPage(permalink, langCode), `fetchPage(${siteSlug}, ${lang}, ${permalink})`);
 }
 
 async function fetchPost(slug: string, lang: string) {
@@ -695,7 +834,7 @@ async function fetchPost(slug: string, lang: string) {
     if (posts.length === 0) return null
 
     return posts[0] as Posts
-  })
+  }, null, `fetchPost(${slug}, ${lang})`)
 }
 
 export default directusApi
