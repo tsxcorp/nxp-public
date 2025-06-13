@@ -101,7 +101,7 @@ export async function GET(req: NextRequest, ctx: { params: any }) {
   const results = await Promise.all(
     newCollections.map(async (collection) => {
       const res = await directusApi.request(
-        readItems(collection as any, { search: search ? search.toString() : '' })
+        readItems(collection, { search: search ? search.toString() : '' })
       )
 
       if (raw) {
