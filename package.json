@@ -1,5 +1,5 @@
 {
-  "name": "frontend",
+  "name": "nexpo-platform",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,7 +9,9 @@
     "start": "next start",
     "lint": "next lint",
     "lintfix": "next lint --fix",
-    "format": "prettier '**/*.{ts,tsx}' --write --ignore-path .gitignore"
+    "format": "prettier '**/*.{ts,tsx}' --write --ignore-path .gitignore",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf .next node_modules/.cache"
   },
   "dependencies": {
     "@directus/sdk": "14.0.0",
@@ -23,8 +25,6 @@
     "@types/qs": "^6.9.14",
     "@types/react-dom": "^19.1.6",
     "clsx": "^2.1.0",
-    "eslint": "8.44.0",
-    "eslint-config-next": "15.3.3",
     "framer-motion": "^10.18.0",
     "i18next": "^23.11.1",
     "i18next-browser-languagedetector": "^7.2.1",
@@ -53,11 +53,13 @@
     "@iconify/react": "^4.1.1",
     "@tailwindcss/forms": "^0.5.7",
     "@tailwindcss/typography": "^0.5.12",
-    "@types/node": "18.16.1",
-    "@types/react": "^19.1.8",
+    "@types/node": "^20.11.0",
+    "@types/react": "^18.2.48",
     "@types/uuid": "^9.0.8",
     "autoprefixer": "^10.4.19",
     "daisyui": "^4.10.1",
+    "eslint": "^8.56.0",
+    "eslint-config-next": "15.3.3",
     "eslint-config-prettier": "^8.10.0",
     "postcss": "^8.4.38",
     "postcss-import": "^15.1.0",
@@ -65,6 +67,10 @@
     "prettier-plugin-tailwindcss": "^0.4.1",
     "tailwind-scrollbar-hide": "^4.0.0",
     "tailwindcss": "^3.4.3",
-    "typescript": "5.1.6"
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
   }
 }
