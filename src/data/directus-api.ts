@@ -115,7 +115,6 @@ const safeApiCall = async <T>(
   operationName: string = 'API call'
 ): Promise<T | null> => {
   try {
-    // Check if Directus is available before making the call
     const available = await isDirectusAvailable()
     if (!available) {
       console.warn(`[Directus API] Server not available for ${operationName}, returning fallback`)
@@ -275,13 +274,12 @@ const getMockPage = (permalink: string, lang: string): Pages => {
 const getSite = cache(async (slug: string): Promise<Sites | null> => {
   console.log('[getSite] Fetching site with slug:', slug)
   
-  // Skip if slug is default
   if (slug === 'default') {
     console.log('[getSite] Skipping fetch for default slug')
     return null
   }
 
-  return await safeApiCall(async () => {
+  return await safeApiCall<Sites>(async () => {
     const sites = await directusApi.request(
       withRevalidate(
         readItems('sites', {
@@ -295,17 +293,16 @@ const getSite = cache(async (slug: string): Promise<Sites | null> => {
         }),
         60
       )
-    );
+    ) as Sites[];
     return sites[0] || null
   }, getMockSite(slug), `getSite(${slug})`)
 })
 
 const fetchGlobals = async function (slug: string, lang: string): Promise<Globals | null> {
   const site = await getSite(slug)
-  console.log('[fetchGlobals] site:', JSON.stringify(site, null, 2));
   if (!site) return null
 
-  return await safeApiCall(async () => {
+  return await safeApiCall<Globals>(async () => {
     const globals = await directusApi.request(
       withRevalidate(
         readItems('globals', {
@@ -338,33 +335,23 @@ const fetchGlobals = async function (slug: string, lang: string): Promise<Global
         }),
         60
       )
-    )
-    console.log('[fetchGlobals] globals:', JSON.stringify(globals, null, 2));
-    return globals[0] as Globals || null
+    ) as Globals[];
+    return globals[0] || null
   }, getMockGlobals(lang), `fetchGlobals(${slug}, ${lang})`)
 }
 
 const fetchNavigationSafe = async function (siteSlug: string, lang: string, type: 'main' | 'footer' = 'main'): Promise<Navigation | null> {
-  console.log('\n=== Fetch Navigation ===');
-  console.log('Site slug:', siteSlug);
-  console.log('Navigation type:', type);
-
   const site = await getSite(siteSlug);
   if (!site) {
-    console.log('❌ No site found');
     return getMockNavigation(siteSlug, lang, type);
   }
 
-  // Get navigation ID from site
   const navigationId = type === 'main' ? site.navigation?.[1] : site.navigation?.[0];
-  console.log('Navigation ID:', navigationId);
-
   if (!navigationId) {
-    console.log('❌ No navigation ID found');
     return getMockNavigation(siteSlug, lang, type);
   }
 
-  return await safeApiCall(async () => {
+  return await safeApiCall<Navigation>(async () => {
     const navigations = await directusApi.request(
       withRevalidate(
         readItems('navigation', {
@@ -409,17 +396,9 @@ const fetchNavigationSafe = async function (siteSlug: string, lang: string, type
         }),
         60
       )
-    );
+    ) as Navigation[];
 
-    if (!navigations[0]) {
-      console.log('❌ No navigation found');
-      return null;
-    }
-
-    console.log('✅ Navigation found:', {
-      id: navigations[0].id,
-      items: navigations[0].items?.length || 0,
-    });
+    if (!navigations[0]) return null;
 
     const langMap = { vi: 'vi-VN', en: 'en-US' } as const;
     const directusLang = langMap[lang as keyof typeof langMap] || lang;
@@ -437,7 +416,6 @@ const fetchNavigationSafe = async function (siteSlug: string, lang: string, type
           (trans) => trans.languages_code === directusLang
         ) || item.page.translations[0];
         if (pageTrans?.permalink) {
-          // Multitenant-first: /[site]/[lang]/[permalink]
           href = `/${siteSlug}/${lang}${pageTrans.permalink.startsWith('/') ? '' : '/'}${pageTrans.permalink}`;
         }
       }
@@ -449,15 +427,12 @@ const fetchNavigationSafe = async function (siteSlug: string, lang: string, type
       };
     });
 
-    const navigation: Navigation = {
+    return {
       id: navigations[0].id,
-      status: navigations[0].status as 'published' | 'draft' | 'archived',
-      type: navigations[0].type as 'main' | 'footer',
+      status: navigations[0].status,
+      type: navigations[0].type,
       items: processedItems,
     };
-
-    console.dir(navigation.items, { depth: null });
-    return navigation;
   }, getMockNavigation(siteSlug, lang, type), `fetchNavigation(${siteSlug}, ${lang}, ${type})`);
 };
 

@@ -71,15 +71,13 @@ import {
 
 export interface FormSchema {
   name: string
-  type: 'input' | 'textarea' | 'select' | 'email' | 'number' | 'multiselect' | 'file' | 'image'
+  type: string
   label: string
-  placeholder: string
-  help: string
-  validation: string
-  width: string | number
-  options?: Array<{ label: string; value: string }>
-  outerclass?: string
-  $formkit?: string
+  placeholder?: string
+  help?: string
+  validation?: string
+  width?: string
+  options?: any[]
 }
 
 export interface HeroButton {
@@ -94,77 +92,81 @@ export interface SocialLink {
   url: string
 }
 
+// Define the schema type with proper collection mappings
 export type DirectusSchema = {
-  sites: Sites
-  pages: Pages
-  navigation: Navigation
-  navigation_items: NavigationItems
-  globals: Globals
-  globals_translations: GlobalsTranslations
-  forms: Forms
-  help_collections: HelpCollections
-  help_collections_translations: HelpCollections['translations'][0]
-  help_articles: HelpArticles
-  help_articles_translations: HelpArticlesTranslations
-  posts: Posts
-  posts_translations: PostsTranslations
-  pages_translations: PagesTranslations
-  pages_translations_blocks: PagesTranslationsBlocks
-  seo: Seo
-  team: Team
-  testimonials: Testimonials
-  projects: Projects
-  projects_files: ProjectsFiles
-  projects_settings: ProjectsSettings
-  redirects: Redirects
-  languages: Languages
-  metrics: Metrics
-  inbox: Inbox
-  messages: Messages
-  chat_config: ChatConfig
-  conversations: Conversations
-  help_feedback: HelpFeedback
-  events: Events
-  categories: Categories
-  blog_settings: BlogSettings
-  block_cardgroup: BlockCardgroup
-  block_columns: BlockColumns
-  block_cta: BlockCta
-  block_faqs: BlockFaqs
-  block_features: BlockFeatures
-  block_form: BlockForm
-  block_gallery: BlockGallery
-  block_hero: BlockHero
-  block_html: BlockHtml
-  block_logocloud: BlockLogocloud
-  block_quote: BlockQuote
-  block_richtext: BlockRichtext
-  block_steps: BlockSteps
-  block_team: BlockTeam
-  block_testimonials: BlockTestimonials
-  block_video: BlockVideo
-  form_submission: any
-  form_submissions: any
-  directus_activity: DirectusActivity
-  directus_collections: DirectusCollections
-  directus_dashboards: DirectusDashboards
-  directus_fields: DirectusFields
-  directus_files: DirectusFiles
-  directus_flows: DirectusFlows
-  directus_folders: DirectusFolders
-  directus_migrations: DirectusMigrations
-  directus_notifications: DirectusNotifications
-  directus_operations: DirectusOperations
-  directus_panels: DirectusPanels
-  directus_permissions: DirectusPermissions
-  directus_presets: DirectusPresets
-  directus_relations: DirectusRelations
-  directus_revisions: DirectusRevisions
-  directus_roles: DirectusRoles
-  directus_sessions: DirectusSessions
-  directus_settings: DirectusSettings
-  directus_shares: DirectusShares
-  directus_translations: DirectusTranslations
-  directus_users: DirectusUsers
-  directus_webhooks: DirectusWebhooks
+  [K in keyof typeof collections]: typeof collections[K]
+}
+
+// Define the collections object with proper types
+const collections = {
+  sites: {} as Sites,
+  pages: {} as Pages,
+  navigation: {} as Navigation,
+  navigation_items: {} as NavigationItems,
+  globals: {} as Globals,
+  globals_translations: {} as GlobalsTranslations,
+  forms: {} as Forms,
+  help_collections: {} as HelpCollections,
+  help_articles: {} as HelpArticles,
+  posts: {} as Posts,
+  posts_translations: {} as PostsTranslations,
+  pages_translations: {} as PagesTranslations,
+  pages_translations_blocks: {} as PagesTranslationsBlocks,
+  seo: {} as Seo,
+  team: {} as Team,
+  testimonials: {} as Testimonials,
+  projects: {} as Projects,
+  projects_files: {} as ProjectsFiles,
+  projects_settings: {} as ProjectsSettings,
+  redirects: {} as Redirects,
+  languages: {} as Languages,
+  metrics: {} as Metrics,
+  inbox: {} as Inbox,
+  messages: {} as Messages,
+  chat_config: {} as ChatConfig,
+  conversations: {} as Conversations,
+  help_feedback: {} as HelpFeedback,
+  events: {} as Events,
+  categories: {} as Categories,
+  blog_settings: {} as BlogSettings,
+  block_cardgroup: {} as BlockCardgroup,
+  block_columns: {} as BlockColumns,
+  block_cta: {} as BlockCta,
+  block_faqs: {} as BlockFaqs,
+  block_features: {} as BlockFeatures,
+  block_form: {} as BlockForm,
+  block_gallery: {} as BlockGallery,
+  block_hero: {} as BlockHero,
+  block_html: {} as BlockHtml,
+  block_logocloud: {} as BlockLogocloud,
+  block_quote: {} as BlockQuote,
+  block_richtext: {} as BlockRichtext,
+  block_steps: {} as BlockSteps,
+  block_team: {} as BlockTeam,
+  block_testimonials: {} as BlockTestimonials,
+  block_video: {} as BlockVideo,
+  form_submission: {} as any,
+  form_submissions: {} as any,
+  directus_activity: {} as DirectusActivity,
+  directus_collections: {} as DirectusCollections,
+  directus_dashboards: {} as DirectusDashboards,
+  directus_fields: {} as DirectusFields,
+  directus_files: {} as DirectusFiles,
+  directus_flows: {} as DirectusFlows,
+  directus_folders: {} as DirectusFolders,
+  directus_migrations: {} as DirectusMigrations,
+  directus_notifications: {} as DirectusNotifications,
+  directus_operations: {} as DirectusOperations,
+  directus_panels: {} as DirectusPanels,
+  directus_permissions: {} as DirectusPermissions,
+  directus_presets: {} as DirectusPresets,
+  directus_relations: {} as DirectusRelations,
+  directus_revisions: {} as DirectusRevisions,
+  directus_roles: {} as DirectusRoles,
+  directus_sessions: {} as DirectusSessions,
+  directus_settings: {} as DirectusSettings,
+  directus_shares: {} as DirectusShares,
+  directus_translations: {} as DirectusTranslations,
+  directus_users: {} as DirectusUsers,
+  directus_webhooks: {} as DirectusWebhooks,
 }

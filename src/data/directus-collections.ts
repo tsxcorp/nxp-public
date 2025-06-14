@@ -1,5 +1,24 @@
 import { FormSchema, SocialLink } from '@/data/directus-schema'
 
+// Base interface for all collections
+export interface BaseCollection {
+  id: string
+  status: 'published' | 'draft' | 'archived'
+  date_created?: string
+  date_updated?: string
+  user_created?: string
+  user_updated?: string
+}
+
+// Base interface for translations
+export interface BaseTranslation {
+  languages_code: string
+  title?: string
+  description?: string
+  content?: string
+  permalink?: string
+}
+
 export interface BlockCardgroup {
   cards?: BlockCardgroupCards[]
   group_type?: string
@@ -744,9 +763,8 @@ export interface Events {
   user?: string
 }
 
-export interface Forms {
-  id: string
-  status: 'published' | 'draft' | 'archived'
+// Update Forms interface
+export interface Forms extends BaseCollection {
   on_success?: 'redirect' | 'message'
   redirect_url?: string
   tenant_id?: number
@@ -769,24 +787,20 @@ export interface FormField {
   translations?: FormFieldTranslation[]
 }
 
-export interface FormTranslation {
-  languages_code: string
-  title?: string
+export interface FormTranslation extends BaseTranslation {
   submit_label?: string
   success_message?: string
 }
 
-export interface FormFieldTranslation {
-  languages_code: string
+export interface FormFieldTranslation extends BaseTranslation {
   label?: string
   placeholder?: string
   help?: string
   options?: any
 }
 
-export interface Globals {
+export interface Globals extends BaseCollection {
   favicon?: DirectusFiles
-  id: string
   translations?: GlobalsTranslations[]
   url?: string
   umami_analytics_id?: string
@@ -809,6 +823,7 @@ export interface Globals {
 }
 
 export interface GlobalsTranslations {
+  languages_code: string
   address_country?: string
   address_locality?: string
   address_region?: string
@@ -819,7 +834,6 @@ export interface GlobalsTranslations {
   email?: string
   globals_id?: string | Globals
   id: number
-  languages_code?: string | Languages
   og_image?: string | DirectusFiles
   phone?: string
   postal_code?: string
@@ -939,9 +953,8 @@ export interface Metrics {
   value?: number
 }
 
-export interface Navigation {
-  id: string
-  status: 'published' | 'draft' | 'archived'
+// Update Navigation interface
+export interface Navigation extends BaseCollection {
   type: 'main' | 'footer'
   items: NavigationItem[]
 }
@@ -1118,15 +1131,10 @@ export interface Seo {
   title?: string
 }
 
-export interface Sites {
-  id: string
+// Update Sites interface
+export interface Sites extends BaseCollection {
   slug: string
   title?: string
-  status?: 'published' | 'draft' | 'archived'
-  date_created?: string
-  date_updated?: string
-  user_created?: string | DirectusUsers
-  user_updated?: string | DirectusUsers
   navigation?: string[]
   logo?: string | DirectusFiles
 }
