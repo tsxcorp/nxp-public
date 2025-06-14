@@ -3982,6 +3982,7 @@ snapshots:
     dev: false
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   /@radix-ui/react-arrow@1.1.7(@types/react-dom@19.1.6)(@types/react@18.3.23)(react-dom@19.1.0)(react@19.1.0):
     resolution: {integrity: sha512-F+M1tLhO+mlQaOWspE8Wstg+z6PwxwRd8oQ8IXceWz92kfAmalTRf0EjrouQeo7QssEPfCn05B4Ihs1K9WQ/7w==}
     peerDependencies:
@@ -4034,6 +4035,8 @@ snapshots:
       '@types/react':
         optional: true
 =======
+=======
+>>>>>>> parent of 87f83c2 (big update)
   '@radix-ui/react-arrow@1.0.3(@types/react-dom@19.1.5(@types/react@19.1.6))(@types/react@19.1.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
       '@babel/runtime': 7.24.4
@@ -4058,10 +4061,14 @@ snapshots:
       '@types/react-dom': 19.1.5(@types/react@19.1.6)
 
   '@radix-ui/react-compose-refs@1.0.1(@types/react@19.1.6)(react@19.1.0)':
+<<<<<<< HEAD
+>>>>>>> parent of 87f83c2 (big update)
+=======
 >>>>>>> parent of 87f83c2 (big update)
     dependencies:
       '@types/react': 18.3.23
       react: 19.1.0
+<<<<<<< HEAD
 <<<<<<< HEAD
     dev: false
 
@@ -4079,9 +4086,16 @@ snapshots:
 
   '@radix-ui/react-context@1.0.1(@types/react@19.1.6)(react@19.1.0)':
 >>>>>>> parent of 87f83c2 (big update)
+=======
+    optionalDependencies:
+      '@types/react': 19.1.6
+
+  '@radix-ui/react-context@1.0.1(@types/react@19.1.6)(react@19.1.0)':
+>>>>>>> parent of 87f83c2 (big update)
     dependencies:
       '@types/react': 18.3.23
       react: 19.1.0
+<<<<<<< HEAD
 <<<<<<< HEAD
     dev: false
 
@@ -4099,9 +4113,16 @@ snapshots:
 
   '@radix-ui/react-direction@1.0.1(@types/react@19.1.6)(react@19.1.0)':
 >>>>>>> parent of 87f83c2 (big update)
+=======
+    optionalDependencies:
+      '@types/react': 19.1.6
+
+  '@radix-ui/react-direction@1.0.1(@types/react@19.1.6)(react@19.1.0)':
+>>>>>>> parent of 87f83c2 (big update)
     dependencies:
       '@types/react': 18.3.23
       react: 19.1.0
+<<<<<<< HEAD
 <<<<<<< HEAD
     dev: false
 
@@ -4167,6 +4188,11 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.1.6
 
+=======
+    optionalDependencies:
+      '@types/react': 19.1.6
+
+>>>>>>> parent of 87f83c2 (big update)
   '@radix-ui/react-dismissable-layer@1.0.5(@types/react-dom@19.1.5(@types/react@19.1.6))(@types/react@19.1.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
       '@babel/runtime': 7.24.4
@@ -4198,10 +4224,14 @@ snapshots:
       '@types/react-dom': 19.1.5(@types/react@19.1.6)
 
   '@radix-ui/react-focus-guards@1.0.1(@types/react@19.1.6)(react@19.1.0)':
+<<<<<<< HEAD
+>>>>>>> parent of 87f83c2 (big update)
+=======
 >>>>>>> parent of 87f83c2 (big update)
     dependencies:
       '@types/react': 18.3.23
       react: 19.1.0
+<<<<<<< HEAD
 <<<<<<< HEAD
     dev: false
 
@@ -4490,6 +4520,11 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.1.6
 
+=======
+    optionalDependencies:
+      '@types/react': 19.1.6
+
+>>>>>>> parent of 87f83c2 (big update)
   '@radix-ui/react-focus-scope@1.0.4(@types/react-dom@19.1.5(@types/react@19.1.6))(@types/react@19.1.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
       '@babel/runtime': 7.24.4
@@ -4661,6 +4696,7 @@ snapshots:
       '@types/react': 19.1.6
 
   '@radix-ui/react-use-callback-ref@1.0.1(@types/react@19.1.6)(react@19.1.0)':
+<<<<<<< HEAD
 >>>>>>> parent of 87f83c2 (big update)
     dependencies:
       '@types/react': 18.3.23
@@ -4710,6 +4746,8 @@ snapshots:
       '@types/react': 19.1.6
 
   '@radix-ui/react-use-controllable-state@1.0.1(@types/react@19.1.6)(react@19.1.0)':
+=======
+>>>>>>> parent of 87f83c2 (big update)
     dependencies:
       '@babel/runtime': 7.24.4
       '@radix-ui/react-use-callback-ref': 1.0.1(@types/react@19.1.6)(react@19.1.0)
@@ -4717,7 +4755,11 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.1.6
 
+<<<<<<< HEAD
   '@radix-ui/react-use-escape-keydown@1.0.3(@types/react@19.1.6)(react@19.1.0)':
+=======
+  '@radix-ui/react-use-controllable-state@1.0.1(@types/react@19.1.6)(react@19.1.0)':
+>>>>>>> parent of 87f83c2 (big update)
     dependencies:
       '@babel/runtime': 7.24.4
       '@radix-ui/react-use-callback-ref': 1.0.1(@types/react@19.1.6)(react@19.1.0)
@@ -4725,6 +4767,7 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.1.6
 
+<<<<<<< HEAD
   '@radix-ui/react-use-layout-effect@1.0.1(@types/react@19.1.6)(react@19.1.0)':
 >>>>>>> parent of 87f83c2 (big update)
     dependencies:
@@ -4829,6 +4872,47 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.4
       '@radix-ui/react-use-layout-effect': 1.0.1(@types/react@19.1.6)(react@19.1.0)
+=======
+  '@radix-ui/react-use-escape-keydown@1.0.3(@types/react@19.1.6)(react@19.1.0)':
+    dependencies:
+      '@babel/runtime': 7.24.4
+      '@radix-ui/react-use-callback-ref': 1.0.1(@types/react@19.1.6)(react@19.1.0)
+>>>>>>> parent of 87f83c2 (big update)
+      react: 19.1.0
+    optionalDependencies:
+      '@types/react': 19.1.6
+
+<<<<<<< HEAD
+  '@radix-ui/react-visually-hidden@1.0.3(@types/react-dom@19.1.5(@types/react@19.1.6))(@types/react@19.1.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
+    dependencies:
+      '@babel/runtime': 7.24.4
+=======
+  '@radix-ui/react-use-layout-effect@1.0.1(@types/react@19.1.6)(react@19.1.0)':
+    dependencies:
+      '@babel/runtime': 7.24.4
+      react: 19.1.0
+    optionalDependencies:
+      '@types/react': 19.1.6
+
+  '@radix-ui/react-use-previous@1.0.1(@types/react@19.1.6)(react@19.1.0)':
+    dependencies:
+      '@babel/runtime': 7.24.4
+      react: 19.1.0
+    optionalDependencies:
+      '@types/react': 19.1.6
+
+  '@radix-ui/react-use-rect@1.0.1(@types/react@19.1.6)(react@19.1.0)':
+    dependencies:
+      '@babel/runtime': 7.24.4
+      '@radix-ui/rect': 1.0.1
+      react: 19.1.0
+    optionalDependencies:
+      '@types/react': 19.1.6
+
+  '@radix-ui/react-use-size@1.0.1(@types/react@19.1.6)(react@19.1.0)':
+    dependencies:
+      '@babel/runtime': 7.24.4
+      '@radix-ui/react-use-layout-effect': 1.0.1(@types/react@19.1.6)(react@19.1.0)
       react: 19.1.0
     optionalDependencies:
       '@types/react': 19.1.6
@@ -4836,12 +4920,16 @@ snapshots:
   '@radix-ui/react-visually-hidden@1.0.3(@types/react-dom@19.1.5(@types/react@19.1.6))(@types/react@19.1.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
       '@babel/runtime': 7.24.4
+>>>>>>> parent of 87f83c2 (big update)
       '@radix-ui/react-primitive': 1.0.3(@types/react-dom@19.1.5(@types/react@19.1.6))(@types/react@19.1.6)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
     optionalDependencies:
       '@types/react': 19.1.6
       '@types/react-dom': 19.1.5(@types/react@19.1.6)
+<<<<<<< HEAD
+>>>>>>> parent of 87f83c2 (big update)
+=======
 >>>>>>> parent of 87f83c2 (big update)
 
   /@radix-ui/rect@1.1.1:
@@ -4984,6 +5072,9 @@ snapshots:
       '@types/react': 19.1.6
 
   '@types/react@19.1.6':
+<<<<<<< HEAD
+>>>>>>> parent of 87f83c2 (big update)
+=======
 >>>>>>> parent of 87f83c2 (big update)
     dependencies:
       undici-types: 6.21.0
@@ -8318,6 +8409,7 @@ snapshots:
     dev: false
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   /react-markdown@8.0.7(@types/react@18.3.23)(react@19.1.0):
     resolution: {integrity: sha512-bvWbzG4MtOU62XqBx3Xx+zB2raaFFsq4mYiAzfjXJMEz2sixgeAfraA3tvzULF02ZdOMUOKTBFFaZJDDrq+BJQ==}
     peerDependencies:
@@ -8329,6 +8421,8 @@ snapshots:
       '@types/react': 18.3.23
       '@types/unist': 2.0.11
 =======
+=======
+>>>>>>> parent of 87f83c2 (big update)
   react-markdown@8.0.7(@types/react@19.1.6)(react@19.1.0):
     dependencies:
       '@types/hast': 2.3.10
@@ -8354,6 +8448,7 @@ snapshots:
     dev: false
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   /react-remove-scroll-bar@2.3.8(@types/react@18.3.23)(react@19.1.0):
     resolution: {integrity: sha512-9r+yi9+mgU33AKcj6IbT9oRCO78WriSj6t/cF8DWBZJ9aOGPOTEDvdUDz1FwKim7QXWwmHqtdHnRJfhAxEG46Q==}
     engines: {node: '>=10'}
@@ -8366,9 +8461,13 @@ snapshots:
 =======
   react-remove-scroll-bar@2.3.6(@types/react@19.1.6)(react@19.1.0):
 >>>>>>> parent of 87f83c2 (big update)
+=======
+  react-remove-scroll-bar@2.3.6(@types/react@19.1.6)(react@19.1.0):
+>>>>>>> parent of 87f83c2 (big update)
     dependencies:
       '@types/react': 18.3.23
       react: 19.1.0
+<<<<<<< HEAD
 <<<<<<< HEAD
       react-style-singleton: 2.2.3(@types/react@18.3.23)(react@19.1.0)
       tslib: 2.8.1
@@ -8384,16 +8483,22 @@ snapshots:
       '@types/react':
         optional: true
 =======
+=======
+>>>>>>> parent of 87f83c2 (big update)
       react-style-singleton: 2.2.1(@types/react@19.1.6)(react@19.1.0)
       tslib: 2.6.2
     optionalDependencies:
       '@types/react': 19.1.6
 
   react-remove-scroll@2.5.5(@types/react@19.1.6)(react@19.1.0):
+<<<<<<< HEAD
+>>>>>>> parent of 87f83c2 (big update)
+=======
 >>>>>>> parent of 87f83c2 (big update)
     dependencies:
       '@types/react': 18.3.23
       react: 19.1.0
+<<<<<<< HEAD
 <<<<<<< HEAD
       react-remove-scroll-bar: 2.3.8(@types/react@18.3.23)(react@19.1.0)
       react-style-singleton: 2.2.3(@types/react@18.3.23)(react@19.1.0)
@@ -8402,6 +8507,8 @@ snapshots:
       use-sidecar: 1.1.3(@types/react@18.3.23)(react@19.1.0)
     dev: false
 =======
+=======
+>>>>>>> parent of 87f83c2 (big update)
       react-remove-scroll-bar: 2.3.6(@types/react@19.1.6)(react@19.1.0)
       react-style-singleton: 2.2.1(@types/react@19.1.6)(react@19.1.0)
       tslib: 2.6.2
@@ -8409,6 +8516,9 @@ snapshots:
       use-sidecar: 1.1.2(@types/react@19.1.6)(react@19.1.0)
     optionalDependencies:
       '@types/react': 19.1.6
+<<<<<<< HEAD
+>>>>>>> parent of 87f83c2 (big update)
+=======
 >>>>>>> parent of 87f83c2 (big update)
 
   /react-slideshow-image@4.3.2(react@19.1.0):
@@ -8422,6 +8532,7 @@ snapshots:
     dev: false
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   /react-style-singleton@2.2.3(@types/react@18.3.23)(react@19.1.0):
     resolution: {integrity: sha512-b6jSvxvVnyptAiLjbkWLE/lOnR4lfTtDAl+eUC7RZy+QQWc6wRzIV2CE6xBuMmDxc2qIihtDCZD5NPOFl7fRBQ==}
     engines: {node: '>=10'}
@@ -8431,6 +8542,9 @@ snapshots:
     peerDependenciesMeta:
       '@types/react':
         optional: true
+=======
+  react-style-singleton@2.2.1(@types/react@19.1.6)(react@19.1.0):
+>>>>>>> parent of 87f83c2 (big update)
 =======
   react-style-singleton@2.2.1(@types/react@19.1.6)(react@19.1.0):
 >>>>>>> parent of 87f83c2 (big update)
@@ -8445,6 +8559,9 @@ snapshots:
       tslib: 2.6.2
     optionalDependencies:
       '@types/react': 19.1.6
+<<<<<<< HEAD
+>>>>>>> parent of 87f83c2 (big update)
+=======
 >>>>>>> parent of 87f83c2 (big update)
 
   /react-universal-interface@0.6.2(react@19.1.0)(tslib@2.8.1):
@@ -9321,6 +9438,7 @@ snapshots:
     dev: true
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   /use-callback-ref@1.3.3(@types/react@18.3.23)(react@19.1.0):
     resolution: {integrity: sha512-jQL3lRnocaFtu3V00JToYz/4QkNWswxijDaCVNZRiRTO3HQDLsdu1ZtmIUvV4yPp+rvWm5j0y0TG/S61cuijTg==}
     engines: {node: '>=10'}
@@ -9330,6 +9448,9 @@ snapshots:
     peerDependenciesMeta:
       '@types/react':
         optional: true
+=======
+  use-callback-ref@1.3.2(@types/react@19.1.6)(react@19.1.0):
+>>>>>>> parent of 87f83c2 (big update)
 =======
   use-callback-ref@1.3.2(@types/react@19.1.6)(react@19.1.0):
 >>>>>>> parent of 87f83c2 (big update)
@@ -9355,6 +9476,9 @@ snapshots:
       '@types/react': 19.1.6
 
   use-sidecar@1.1.2(@types/react@19.1.6)(react@19.1.0):
+<<<<<<< HEAD
+>>>>>>> parent of 87f83c2 (big update)
+=======
 >>>>>>> parent of 87f83c2 (big update)
     dependencies:
       '@types/react': 18.3.23
@@ -9367,6 +9491,9 @@ snapshots:
       tslib: 2.6.2
     optionalDependencies:
       '@types/react': 19.1.6
+<<<<<<< HEAD
+>>>>>>> parent of 87f83c2 (big update)
+=======
 >>>>>>> parent of 87f83c2 (big update)
 
   /util-deprecate@1.0.2:

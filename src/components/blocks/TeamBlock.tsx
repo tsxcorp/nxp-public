@@ -7,7 +7,11 @@ import TypographyProse from '@/components/typography/TypographyProse'
 import { BlockTeam } from '@/data/directus-collections'
 import { getDirectusMedia } from '@/lib/utils/directus-helpers'
 <<<<<<< HEAD
+<<<<<<< HEAD
 import Image from 'next/image'
+=======
+import { motion } from 'framer-motion'
+>>>>>>> parent of 87f83c2 (big update)
 =======
 import { motion } from 'framer-motion'
 >>>>>>> parent of 87f83c2 (big update)

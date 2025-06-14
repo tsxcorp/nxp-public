@@ -24,7 +24,12 @@
     "@react-hook/resize-observer": "^1.2.6",
     "@types/qs": "^6.9.14",
 <<<<<<< HEAD
+<<<<<<< HEAD
     "@types/react-dom": "^18.2.25",
+=======
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+>>>>>>> parent of 87f83c2 (big update)
 =======
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
