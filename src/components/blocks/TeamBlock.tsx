@@ -6,7 +6,11 @@ import TypographyHeadline from '@/components/typography/TypographyHeadline'
 import TypographyProse from '@/components/typography/TypographyProse'
 import { BlockTeam } from '@/data/directus-collections'
 import { getDirectusMedia } from '@/lib/utils/directus-helpers'
+<<<<<<< HEAD
 import Image from 'next/image'
+=======
+import { motion } from 'framer-motion'
+>>>>>>> parent of 87f83c2 (big update)
 
 interface SocialMedia {
   service: string
@@ -117,11 +121,9 @@ const TeamBlock = ({ data, lang, teams = [] }: TeamBlockProps) => {
                 >
                   <div className="relative w-42 h-42 mx-auto mb-4 transition-transform duration-500 scale-100 group-hover:scale-105">
                     {imageUrl ? (
-                      <Image
+                      <img
                         src={imageUrl}
                         alt={member.name}
-                        width={168}
-                        height={168}
                         className="w-42 h-42 rounded-full object-cover border-2 border-[var(--color-primary)] shadow-lg"
                       />
                     ) : (

@@ -2,7 +2,7 @@
 /* eslint-disable react/no-unescaped-entities */
 /* eslint-disable jsx-a11y/alt-text */
 /* eslint-disable @next/next/no-img-element */
-import React, { useEffect, useMemo, useState, useCallback } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import BlockContainer from '@/components/BlockContainer'
 import VIcon from '@/components/base/VIcon'
 import Image from 'next/image'
@@ -26,23 +26,23 @@ function VGallery({ items }: GalleryProps) {
     return items[currentItemIdx]
   }, [items, currentItemIdx])
 
-  const next = useCallback(() => {
+  const next = () => {
     setCurrentItemIdx((prevIdx) =>
       prevIdx === items.length - 1 ? 0 : prevIdx + 1
     )
-  }, [items.length])
+  }
 
-  const prev = useCallback(() => {
+  const prev = () => {
     setCurrentItemIdx((prevIdx) =>
       prevIdx === 0 ? items.length - 1 : prevIdx - 1
     )
-  }, [items.length])
+  }
 
-  const toggle = useCallback(() => {
-    setIsOpen((open) => !open)
-  }, [])
+  const toggle = () => {
+    setIsOpen(!isOpen)
+  }
 
-  const onKeydown = useCallback((e: KeyboardEvent) => {
+  const onKeydown = (e: KeyboardEvent) => {
     if (!isOpen) return
     if (e.key === 'Escape') {
       toggle()
@@ -53,14 +53,14 @@ function VGallery({ items }: GalleryProps) {
     if (e.key === 'ArrowLeft') {
       prev()
     }
-  }, [isOpen, toggle, next, prev])
+  }
 
   useEffect(() => {
     window.addEventListener('keydown', onKeydown)
     return () => {
       window.removeEventListener('keydown', onKeydown)
     }
-  }, [onKeydown])
+  }, [])
 
   return (
     <>

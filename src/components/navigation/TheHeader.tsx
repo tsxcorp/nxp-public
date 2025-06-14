@@ -2,7 +2,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Navigation, NavigationItem } from '@/data/directus-collections';
 import { useTheme } from '@/components/providers/ThemeProvider';
 
@@ -39,12 +38,10 @@ const TheHeader: React.FC<TheHeaderProps> = ({ navigation, lang, site }) => {
         <div className="flex items-center gap-4">
           <Link href={`/${site?.slug || ''}/${lang}`} className="flex items-center gap-2">
             {site?.logo ? (
-              <Image
+              <img
                 src={`${directusUrl}/assets/${site.logo}`}
                 alt={site?.title || 'Logo'}
                 className="h-10 w-auto object-contain"
-                width={80}
-                height={40}
               />
             ) : (
               <span className="font-bold text-xl uppercase" style={{ color: `var(--color-primary)` }}>
