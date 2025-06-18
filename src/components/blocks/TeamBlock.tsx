@@ -1,20 +1,19 @@
 'use client'
 import React, { ReactElement } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import useResizeObserver from '@/hooks/useResizeObserver'
+import { useIntersection } from 'react-use'
+import directusApi from '@/directus/client'
+import { readItems } from '@directus/sdk'
 import BlockContainer from '@/components/BlockContainer'
 import TypographyTitle from '@/components/typography/TypographyTitle'
 import TypographyHeadline from '@/components/typography/TypographyHeadline'
 import TypographyProse from '@/components/typography/TypographyProse'
-import { BlockTeam } from '@/data/directus-collections'
+import TeamCard from '@/components/TeamCard'
+import { BlockTeam, Team } from '@/directus/types'
 import { getDirectusMedia } from '@/lib/utils/directus-helpers'
-<<<<<<< HEAD
-<<<<<<< HEAD
+import { motion } from 'framer-motion'
 import Image from 'next/image'
-=======
-import { motion } from 'framer-motion'
->>>>>>> parent of 87f83c2 (big update)
-=======
-import { motion } from 'framer-motion'
->>>>>>> parent of 87f83c2 (big update)
 
 interface SocialMedia {
   service: string
@@ -37,7 +36,10 @@ interface TeamMember {
 }
 
 interface TeamBlockProps {
-  data: BlockTeam & {
+  data: {
+    title?: string
+    headline?: string
+    content?: string
     translations?: Array<{
       title?: string
       headline?: string
@@ -64,11 +66,12 @@ const TeamBlock = ({ data, lang, teams = [] }: TeamBlockProps) => {
   });
 
   // Translation logic
-  const directusLang = lang === 'en' ? 'en-US' : 'vi-VN'
-  const translation = data.translations?.find(
-    t => t.languages_code === directusLang
-  ) || data.translations?.[0];
-  
+  const translation =
+    data.translations?.find(
+      t =>
+        t.languages_code === lang ||
+        (t.languages_code && lang && t.languages_code.toLowerCase().startsWith(lang.toLowerCase() + '-'))
+    );
   const title = translation?.title || data.title;
   const headline = translation?.headline || data.headline;
   const content = translation?.content || data.content;
@@ -103,7 +106,7 @@ const TeamBlock = ({ data, lang, teams = [] }: TeamBlockProps) => {
                 imageUrl = getDirectusMedia(member.image.id);
               }
               const memberTranslation = member.translations?.find(
-                t => t.languages_code === directusLang
+                t => t.languages_code === lang || (t.languages_code && lang && t.languages_code.toLowerCase().startsWith(lang.toLowerCase() + '-'))
               );
               const displayJobTitle = memberTranslation?.job_title || member.job_title;
               const displayBio = memberTranslation?.bio || member.bio;
@@ -125,9 +128,11 @@ const TeamBlock = ({ data, lang, teams = [] }: TeamBlockProps) => {
                 >
                   <div className="relative w-42 h-42 mx-auto mb-4 transition-transform duration-500 scale-100 group-hover:scale-105">
                     {imageUrl ? (
-                      <img
+                      <Image
                         src={imageUrl}
                         alt={member.name}
+                        width={168}
+                        height={168}
                         className="w-42 h-42 rounded-full object-cover border-2 border-[var(--color-primary)] shadow-lg"
                       />
                     ) : (

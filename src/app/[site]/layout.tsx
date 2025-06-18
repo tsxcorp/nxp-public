@@ -1,5 +1,5 @@
 import React from 'react';
-import { fetchGlobals } from '@/data/directus-api';
+import { fetchGlobals } from '@/directus/queries/globals';
 import '@/app/globals.css';
 import { ClientThemeWrapper } from '@/components/providers/ClientThemeWrapper';
 import { FontVariablesSetter } from '@/components/providers/FontVariablesSetter';
@@ -21,8 +21,8 @@ export default async function SiteLayout(props: { children: React.ReactNode, par
 
   // Fetch globals for this site
   process.stdout.write(`[${timestamp}] 📥 SITE_LAYOUT: Fetching globals...\n`);
-  const globals = await fetchGlobals(siteSlug, lang);
-  const theme = globals?.theme || globals?.translations?.[0]?.theme || {};
+  const globals = await fetchGlobals();
+  const theme = globals?.translations?.[0]?.theme || {};
   process.stdout.write(`[${timestamp}] 📦 SITE_LAYOUT: Received globals: ${globals ? 'yes' : 'no'}\n`);
   
   // const theme = globals?.theme || {};

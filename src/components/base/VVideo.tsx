@@ -1,6 +1,5 @@
 import React from 'react'
 import { generateVideoEmbed } from '@/lib/utils/embed'
-import { motion } from 'framer-motion'
 
 interface VideoProps {
   url: string
@@ -11,12 +10,8 @@ interface VideoProps {
 
 export default function VVideo({ url, title, name, className }: VideoProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.7, ease: 'easeOut' }}
-      whileHover={{ scale: 1.02, boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.15)' }}
-      className={`mx-auto my-6 max-w-4xl w-full rounded-2xl  bg-white shadow-lg overflow-hidden ${className || ''}`}
+    <div
+      className={`mx-auto my-6 max-w-4xl w-full rounded-2xl bg-white shadow-lg overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl ${className || ''}`}
     >
       <iframe
         className='aspect-video w-full min-h-[400px]'
@@ -29,6 +24,6 @@ export default function VVideo({ url, title, name, className }: VideoProps) {
         title={title}
         style={{ borderRadius: '1rem' }}
       ></iframe>
-    </motion.div>
+    </div>
   )
 }

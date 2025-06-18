@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigation, NavigationItem } from '@/data/directus-collections';
+import { Navigation, NavigationItem } from '@/directus/types';
 import Link from 'next/link';
 
 interface TheFooterProps {

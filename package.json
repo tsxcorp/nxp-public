@@ -23,18 +23,10 @@
     "@radix-ui/react-popover": "^1.0.7",
     "@react-hook/resize-observer": "^1.2.6",
     "@types/qs": "^6.9.14",
-<<<<<<< HEAD
-<<<<<<< HEAD
-    "@types/react-dom": "^18.2.25",
-=======
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
->>>>>>> parent of 87f83c2 (big update)
-=======
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
->>>>>>> parent of 87f83c2 (big update)
+    "@types/react-dom": "^18.2.22",
     "clsx": "^2.1.0",
+    "eslint": "8.44.0",
+    "eslint-config-next": "14.1.4",
     "framer-motion": "^10.18.0",
     "i18next": "^23.11.1",
     "i18next-browser-languagedetector": "^7.2.1",
@@ -45,8 +37,8 @@
     "next": "15.3.3",
     "next-i18n-router": "^5.4.0",
     "qs": "^6.12.1",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "react-hook-form": "^7.51.3",
     "react-i18next": "^14.1.0",
     "react-markdown": "^8.0.7",
@@ -63,8 +55,8 @@
     "@iconify/react": "^4.1.1",
     "@tailwindcss/forms": "^0.5.7",
     "@tailwindcss/typography": "^0.5.12",
-    "@types/node": "^20.11.0",
-    "@types/react": "^18.2.48",
+    "@types/node": "^20.19.1",
+    "@types/react": "^18.3.23",
     "@types/uuid": "^9.0.8",
     "autoprefixer": "^10.4.19",
     "daisyui": "^4.10.1",

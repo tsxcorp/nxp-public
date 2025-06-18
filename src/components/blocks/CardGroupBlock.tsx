@@ -1,4 +1,4 @@
-import { Posts } from '@/data/directus-collections'
+import { Posts } from '@/directus/types'
 import BlockContainer from '@/components/BlockContainer'
 import TypographyTitle from '@/components/typography/TypographyTitle'
 import TypographyHeadline from '@/components/typography/TypographyHeadline'

@@ -1,23 +1,60 @@
 import React from 'react';
-import { fetchNavigationSafe, fetchPage, getSite } from '@/data/directus-api';
+import { fetchNavigationSafe } from '@/directus/queries/navigation';
+import { fetchPage } from '@/directus/queries/pages';
+import { getSite } from '@/directus/queries/sites';
 import TheHeader from '@/components/navigation/TheHeader';
 import TheFooter from '@/components/navigation/TheFooter';
-import { Navigation } from '@/data/directus-collections';
+import { Navigation } from '@/directus/types';
+import type { Page } from '@/directus/types';
 import PageBuilder from '@/components/PageBuilder'
+import { PageProps } from '@/types/next';
 
-export default async function Page({ params }: { params: Promise<{ site: string, lang: string }> }) {
-  const resolvedParams = await params;
+export default async function Page({ params, searchParams }: PageProps) {
+  const [resolvedParams, resolvedSearchParams] = await Promise.all([
+    params,
+    searchParams
+  ]);
   const { site, lang } = resolvedParams;
+
+  console.log('\n=== Page Component Debug ===');
+  console.log('Site:', site);
+  console.log('Language:', lang);
 
   // Fetch navigation (main/footer)
   const [mainNav, footerNav, siteData] = await Promise.all([
-    fetchNavigationSafe(site, lang, 'main'),
+    fetchNavigationSafe(site, lang, 'header'),
     fetchNavigationSafe(site, lang, 'footer'),
     getSite(site)
   ]);
 
+  console.log('\n=== Navigation Data ===');
+  console.log('Header Navigation:', mainNav);
+  console.log('Footer Navigation:', footerNav);
+  console.log('Site Data:', siteData);
+
   // Fetch homepage
-  const pageContent = await fetchPage(site, lang, '/');
+  const pageContent = await fetchPage(site, lang, '/') as (Page & {
+    translations: Array<{
+      languages_code: string;
+      title?: string;
+      permalink: string;
+      content?: string;
+    }>;
+    blocks?: Array<{
+      id: string;
+      collection: string;
+      item: {
+        id: string;
+        translations: Array<{
+          languages_code: string;
+          title?: string;
+          headline?: string;
+          content?: string;
+        }>;
+      };
+    }>;
+  }) | null;
+
   // Explicitly type translation
   const translation = (pageContent?.translations?.[0] ?? {}) as {
     title?: string;
@@ -42,6 +79,7 @@ export default async function Page({ params }: { params: Promise<{ site: string,
               <pre className="text-sm">
                 {JSON.stringify({
                   params: resolvedParams,
+                  searchParams: resolvedSearchParams,
                   hasMainNav: !!mainNav,
                   hasFooterNav: !!footerNav
                 }, null, 2)}
@@ -59,10 +97,6 @@ export default async function Page({ params }: { params: Promise<{ site: string,
       <TheHeader navigation={mainNav} lang={lang} site={siteData} />
       <div className="min-h-screen w-full bg-gray-50 py-12">
         <div className="w-full px-4 md:px-8 lg:px-16">
-          {/* <h1 className="text-3xl font-bold mb-4">{translation.title || pageContent?.title || 'Untitled'}</h1>
-          <div className="mb-2">Site: <b>{site}</b></div>
-          <div className="mb-2">Lang: <b>{lang}</b></div>
-          <div className="mb-2">Slug: <b>/</b></div> */}
           <PageBuilder blocks={Array.isArray(pageContent.blocks) ? pageContent.blocks : []} lang={lang} />
         </div>
       </div>

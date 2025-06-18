@@ -25,9 +25,6 @@ const nextConfig = {
     // your project has ESLint errors.
     ignoreDuringBuilds: false,
   },
-  outputFileTracingIncludes: {
-    '/': ['./src/**/*'],
-  },
   experimental: {
     // Enable static exports for better performance
   },

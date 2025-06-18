@@ -73,10 +73,12 @@ export default function LogoCloudBlock({ data, lang }: Props) {
               key={`${logo.id}-${index}`}
               className='flex-shrink-0 w-48 h-48 flex items-center justify-center rounded-xl bg-white p-8 mx-4 transition-transform duration-300 hover:scale-125 hover:z-10'
             >
-              <img
+              <Image
                 className='h-24 w-auto object-contain'
                 src={getDirectusMedia(logo.directus_files_id.id)}
-                alt={logo.directus_files_id.title || ''}  
+                alt={logo.directus_files_id.title || ''}
+                width={96}
+                height={96}
               />
             </div>
           ))}

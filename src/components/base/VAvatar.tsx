@@ -1,5 +1,5 @@
 import Image from 'next/image'
-import { DirectusUsers } from '@/data/directus-collections'
+import { DirectusUsers } from '@/directus/types'
 import { getDirectusMedia } from '@/lib/utils/directus-helpers'
 import { userName } from '@/lib/utils/directus-helpers'
 

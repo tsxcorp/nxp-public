@@ -27,20 +27,14 @@ export default {
       colors: {
         gray: colors.slate,
         red: colors.rose,
-        glass: {
-          light: 'rgba(255, 255, 255, 0.7)',
-          dark: 'rgba(17, 25, 40, 0.75)',
-        },
       },
       fontFamily: {
-        sans: ['Roboto', ...defaultTheme.fontFamily.sans],
-        serif: ['Roboto', ...defaultTheme.fontFamily.serif],
-        mono: ['Source Code Pro', ...defaultTheme.fontFamily.mono],
+        sans: ['Inter', ...defaultTheme.fontFamily.sans],
+        serif: ['Playfair Display', ...defaultTheme.fontFamily.serif],
+        mono: ['Fira Code', ...defaultTheme.fontFamily.mono],
       },
       animation: {
         'fade-in': 'fade-in 0.5s linear forwards',
-        'glass-shine': 'glass-shine 2s ease-in-out infinite',
-        'float': 'float 6s ease-in-out infinite',
       },
       keyframes: {
         'fade-in': {
@@ -51,17 +45,6 @@ export default {
             opacity: '1',
           },
         },
-        'glass-shine': {
-          '0%': { backgroundPosition: '200% center' },
-          '100%': { backgroundPosition: '-200% center' },
-        },
-        'float': {
-          '0%, 100%': { transform: 'translateY(0)' },
-          '50%': { transform: 'translateY(-10px)' },
-        },
-      },
-      backdropBlur: {
-        xs: '2px',
       },
     },
   },
@@ -85,7 +68,6 @@ export default {
   plugins: [
     require('@tailwindcss/forms'),
     require('@tailwindcss/typography'),
-    require('tailwind-scrollbar-hide'),
     require('daisyui'),
   ],
 } satisfies Config

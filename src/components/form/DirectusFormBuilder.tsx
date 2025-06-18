@@ -1,8 +1,9 @@
-import { FormSchema } from '@/data/directus-schema';
+import { Form, useForm } from 'react-hook-form';
+import { FormField } from '@/directus/types';
 import { cn } from '@/lib/utils/tw';
 
 interface DirectusFormBuilderProps {
-  element: FormSchema;
+  element: FormField;
   hookForm: any;
 }
 
@@ -18,13 +19,17 @@ export default function DirectusFormBuilder({ element, hookForm }: DirectusFormB
   const { register } = hookForm;
   console.log('DirectusFormBuilder - Register function:', register);
 
+  // Get the first translation for now (we can add language support later)
+  const translation = element.translations?.[0];
+
   // Use only neutral or variable-based colors for styling
   const commonProps = {
     id: element.name,
     name: element.name,
-    className: 'form-input w-full rounded-md px-4 py-4 bg-[var(--color-bg,theme(colors.white))] text-gray-900 border border-[var(--color-border,theme(colors.neutral.300))] focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]',
-    placeholder: element.placeholder || '',
-    'aria-label': element.label || element.name,
+    className: 'form-input w-full rounded-md px-4 py-4 bg-[var(--color-bg,theme(colors.white))] text-gray-900 border border-gray-300 focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]',
+    placeholder: translation?.placeholder || '',
+    'aria-label': translation?.label || element.label || element.name,
+    style: { borderColor: 'var(--color-border, #d1d5db)' },
   };
 
   console.log('DirectusFormBuilder - Common props:', commonProps);
@@ -116,7 +121,7 @@ export default function DirectusFormBuilder({ element, hookForm }: DirectusFormB
               <input
                 type="checkbox"
                 value={option.value}
-                className="form-checkbox h-4 w-4 text-[var(--color-primary)] border-[var(--color-border,theme(colors.neutral.300))] rounded focus:ring-[var(--color-primary)]"
+                className="form-checkbox h-4 w-4 text-[var(--color-primary)] border-[var(--color-border)] rounded focus:ring-[var(--color-primary)]"
                 {...register(element.name, {
                   ...getValidationRules(),
                   validate: (value: string[] | undefined) => {
@@ -127,7 +132,7 @@ export default function DirectusFormBuilder({ element, hookForm }: DirectusFormB
                   }
                 })}
               />
-              <span className="text-[var(--color-text,theme(colors.neutral.900))]">{option.label}</span>
+              <span className="text-[var(--color-text)]">{option.label}</span>
             </label>
           ))}
         </div>

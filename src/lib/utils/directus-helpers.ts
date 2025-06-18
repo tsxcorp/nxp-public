@@ -1,15 +1,15 @@
-import { DirectusFiles, DirectusUsers } from '@/data/directus-collections'
+import { DirectusFile, DirectusUsers } from '@/directus/types'
 
-export function getDirectusURL(path = ''): string {
+export function getDirectusURL(path = '') {
   return `${
     process.env.NEXT_PUBLIC_DIRECTUS_URL || 'http://localhost:8055'
   }${path}`
 }
 
 export function getDirectusMedia(
-  url: string | DirectusFiles | null | undefined
-): string {
-  if (url == null || typeof url === 'undefined') {
+  url: string | DirectusFile | null | undefined
+) {
+  if (url == null || typeof url === undefined) {
     return ''
   }
   let localUrl = typeof url === 'string' ? url : url.id
@@ -19,17 +19,17 @@ export function getDirectusMedia(
     return localUrl
   }
 
-  // Otherwise prepend the URL path with the Directus URL
-  return `${getDirectusURL()}/assets/${localUrl}`
+  // Otherwise prepend the URL path with the Strapi URL
+  return `${getDirectusURL()}/assets/${url}`
 }
 
-export function getStrapiURL(path = ''): string {
+export function getStrapiURL(path = '') {
   return `${
     process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337'
   }${path}`
 }
 
-export function getStrapiMedia(url: string | null): string | null {
+export function getStrapiMedia(url: string | null) {
   if (url == null) {
     return null
   }
@@ -43,7 +43,7 @@ export function getStrapiMedia(url: string | null): string | null {
   return `${getStrapiURL()}${url}`
 }
 
-export function formatDate(dateString: string): string {
+export function formatDate(dateString: string) {
   const date = new Date(dateString)
   const options: Intl.DateTimeFormatOptions = {
     year: 'numeric',
@@ -54,12 +54,12 @@ export function formatDate(dateString: string): string {
 }
 
 // ADDS DELAY TO SIMULATE SLOW API REMOVE FOR PRODUCTION
-export const delay = (time: number): Promise<number> =>
+export const delay = (time: number) =>
   new Promise((resolve) => setTimeout(() => resolve(1), time))
 
 export function userName(user: Partial<DirectusUsers>): string {
   if (!user) {
-    return 'Unknown User'
+    return 'Unknown User' as string
   }
 
   if (user.first_name && user.last_name) {
@@ -74,5 +74,5 @@ export function userName(user: Partial<DirectusUsers>): string {
     return user.email
   }
 
-  return 'Unknown User'
+  return 'Unknown User' as string
 }

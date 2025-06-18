@@ -6,7 +6,7 @@ import TypographyTitle from '@/components/typography/TypographyTitle'
 import BlockContainer from '@/components/BlockContainer'
 import { getDirectusMedia } from '@/lib/utils/directus-helpers'
 import { motion } from 'framer-motion'
-import { BlockColumns, BlockColumnsRows } from '@/data/directus-collections'
+import { BlockColumns, BlockColumnsRows } from '@/directus/types'
 import { useEffect } from 'react'
 
 interface RowTranslation {

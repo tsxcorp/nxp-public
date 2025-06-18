@@ -1,4 +1,4 @@
-import { DirectusUsers, Posts } from '@/data/directus-collections'
+import { DirectusUsers, Posts } from '@/directus/types'
 import { Link } from '@/lib/navigation'
 import Image from 'next/image'
 

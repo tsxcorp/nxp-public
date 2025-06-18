@@ -1,55 +1,58 @@
 import React from 'react';
-import { fetchNavigationSafe, fetchPage, getSite } from '@/data/directus-api';
+import { fetchNavigationSafe } from '@/directus/queries/navigation';
+import { fetchPage } from '@/directus/queries/pages';
+import { getSite } from '@/directus/queries/sites';
 import TheHeader from '@/components/navigation/TheHeader';
 import TheFooter from '@/components/navigation/TheFooter';
-import { Navigation } from '@/data/directus-collections';
-import PageBuilder from '@/components/PageBuilder'
-import { fetchTeamMembers } from '@/data/fetch-team';
+import { Navigation, Page } from '@/directus/types';
+import PageBuilder from '@/components/PageBuilder';
+import { fetchTeamMembers } from '@/directus/queries/team';
+import { PageProps } from '@/types/next';
 
-export default async function SlugPage({ params }: { params: { site: string, lang: string, slug?: string[] } }) {  // console.log('\n=== Page Component ===');
-  // console.log('Raw params:', params);
+export default async function SlugPage({ params, searchParams }: PageProps) {
+  const [resolvedParams, resolvedSearchParams] = await Promise.all([
+    params,
+    searchParams
+  ]);
+  const { site, lang, slug } = resolvedParams;
   
-  const { site, lang, slug } = params;
-  // console.log('Parsed params:', { site, lang, slug });
-
   // Fetch site data to get siteId (if multi-tenant)
   const siteData = await getSite(site);
 
   // Fetch navigation (main/footer)
-  // console.log('\nFetching navigation...');
   const [mainNav, footerNav] = await Promise.all([
-    fetchNavigationSafe(site, lang, 'main'),
+    fetchNavigationSafe(site, lang, 'header'),
     fetchNavigationSafe(site, lang, 'footer')
   ]);
-  // console.log('Navigation results:', {
-  //   mainNav: mainNav ? {
-  //     id: mainNav.id,
-  //     type: mainNav.type,
-  //     itemsCount: mainNav.items.length
-  //   } : null,
-  //   footerNav: footerNav ? {
-  //     id: footerNav.id,
-  //     type: footerNav.type,
-  //     itemsCount: footerNav.items.length
-  //   } : null
-  // });
 
   // Fetch page content
   // If no slug or slug is empty array, fetch homepage (permalink: "/")
   // If slug is ['nexpo'], also fetch homepage
   const pageSlug = !slug || slug.length === 0 || (slug.length === 1 && slug[0] === site) ? '/' : slug.join('/');
-  // console.log('\nFetching page:', {
-  //   site,
-  //   lang,
-  //   pageSlug,
-  //   originalSlug: slug
-  // });
   
-  const pageContent = await fetchPage(site, lang, pageSlug);
-  // console.log('pageContent:', JSON.stringify(pageContent, null, 2));
+  const pageContent = await fetchPage(site, lang, pageSlug) as (Page & {
+    translations: Array<{
+      languages_code: string;
+      title?: string;
+      permalink: string;
+      content?: string;
+    }>;
+    blocks?: Array<{
+      id: string;
+      collection: string;
+      item: {
+        id: string;
+        translations: Array<{
+          languages_code: string;
+          title?: string;
+          headline?: string;
+          content?: string;
+        }>;
+      };
+    }>;
+  }) | null;
 
   if (!pageContent) {
-    // console.log('\nNo page content found, showing 404');
     // If no page found, return 404
     return (
       <>
@@ -69,7 +72,8 @@ export default async function SlugPage({ params }: { params: { site: string, lan
                   slug,
                   pageSlug,
                   hasMainNav: !!mainNav,
-                  hasFooterNav: !!footerNav
+                  hasFooterNav: !!footerNav,
+                  searchParams: resolvedSearchParams
                 }, null, 2)}
               </pre>
             </div>
@@ -81,27 +85,28 @@ export default async function SlugPage({ params }: { params: { site: string, lan
   }
 
   // Defensive: translations is always array or []
-  const translations = Array.isArray(pageContent?.translations) ? (pageContent.translations as any[]) : [];
+  const translations = Array.isArray(pageContent?.translations) ? pageContent.translations : [];
   // Find translation khớp lang, fallback [0]
-  const firstTrans = (translations.find((t: any) => t.languages_code === (lang === 'en' ? 'en-US' : 'vi-VN')) || translations[0]) as {
+  const firstTrans = (translations.find((t) => t.languages_code === (lang === 'en' ? 'en-US' : 'vi-VN')) || translations[0]) as {
     title?: string;
     languages_code?: string;
-    blocks?: any[];
   } | undefined;
 
-  // Log blocks for debug
-  // console.log('firstTrans.blocks:', JSON.stringify(firstTrans?.blocks, null, 2));
+ // Fetch team members for each block_team block
+const blocks = Array.isArray(pageContent.blocks) ? pageContent.blocks : [];
+const teamMembersMap: Record<string, any[]> = {};
 
-  // Fetch team members for each block_team block
-  const blocks = Array.isArray(pageContent.blocks) ? pageContent.blocks : [];
-  const teamMembersMap: Record<string, any[]> = {};
-  await Promise.all(
-    blocks.map(async (block: { collection: string; item?: { id: string } }) => {
-      if (block.collection === 'block_team' && block.item?.id) {
-        teamMembersMap[block.item.id] = await fetchTeamMembers(siteData?.id, block.item.id);
-      }
-    })
-  );
+await Promise.all(
+  blocks.map(async (block: { collection: string; item?: { id?: string } }) => {
+    if (block.collection === 'block_team' && typeof block.item?.id === 'string') {
+      const stringId = block.item.id;
+      teamMembersMap[stringId] = await fetchTeamMembers(siteData?.id, stringId);
+    }
+  })
+);
+
+  
+
 
   return (
     <>
@@ -122,4 +127,4 @@ export default async function SlugPage({ params }: { params: { site: string, lan
       <TheFooter navigation={footerNav} lang={lang} />
     </>
   );
-} 
+}

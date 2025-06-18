@@ -3,7 +3,7 @@ import VButton from '@/components/base/VButton'
 import BlockContainer from '@/components/BlockContainer'
 import { getDirectusMedia } from '@/lib/utils/directus-helpers'
 import Image from 'next/image'
-import { motion } from 'framer-motion'
+import { motion, HTMLMotionProps } from 'framer-motion'
 
 export interface BlockHeroButton {
   id: string
@@ -63,11 +63,8 @@ export default function HeroBlock({ data, lang }: HeroBlockProps) {
 
   return (
     <BlockContainer className='relative grid gap-6 md:grid-cols-3'>
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: 'easeOut' }}
-        className='md:col-span-2 md:pt-12'
+      <div
+        className='md:col-span-2 md:pt-12 transition-all duration-700 ease-out opacity-0 translate-y-5 animate-fade-in'
       >
         <h1
           className="text-[var(--color-primary)] xs:text-5xl font-[var(--font-display) ] font-bold text-4xl  sm:text-2xl lg:text-6xl leading-snug ]"
@@ -92,12 +89,9 @@ export default function HeroBlock({ data, lang }: HeroBlockProps) {
             )
           })}
         </div>
-      </motion.div>
+      </div>
       {data.image && (
-        <motion.div
-          initial={{ opacity: 0, x: 100 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, ease: 'easeOut' }}
+        <div
           className='p-2 md:-mr-16 lg:relative lg:-mr-48 lg:h-full flex items-center justify-center'
         >
           <Image
@@ -107,7 +101,7 @@ export default function HeroBlock({ data, lang }: HeroBlockProps) {
             src={getDirectusMedia(data.image) as any}
             alt=''
           />
-        </motion.div>
+        </div>
       )}
     </BlockContainer>
   )

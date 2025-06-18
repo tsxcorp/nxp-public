@@ -9,7 +9,7 @@ import { getDirectusMedia } from '@/lib/utils/directus-helpers'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { isEven } from '@/lib/utils/math'
-import { BlockSteps } from '@/data/directus-collections'
+import { BlockSteps } from '@/directus/types'
 
 interface StepsBlockProps {
   data: BlockSteps & {
@@ -67,32 +67,14 @@ export default function StepsBlock({ data, lang }: StepsBlockProps) {
             const stepContent = stepTranslation?.content || step.content || ''
 
             return (
-              <div key={stepIdx}>
-                <motion.div
-                  initial={{
-                    opacity: 0,
-                    scale: 1,
-                    x: isEven(stepIdx) ? -200 : 200,
-                  }}
-                  whileInView={{
-                    opacity: 1,
-                    x: 0,
-                    scale: 1,
-                    transition: {
-                      delay: 0.3,
-                      duration: 0.3,
-                    },
-                  }}
-                  viewport={{ once: true }}
+              <div key={step.id}>
+                <div
                   className={`relative p-6 border-2 border-[var(--color-primary)] md:flex md:space-x-8 ${
                     isEven(stepIdx)
                       ? 'mr-8 rounded-xl'
                       : 'ml-8 rounded-xl'
-                  } ${
-                    isEven(stepIdx) && !data.alternate_image_position
-                      ? 'md:flex-row'
-                      : 'md:flex-row-reverse md:space-x-reverse'
-                  }`}
+                  } opacity-0 translate-x-5 scale-95 animate-fade-in`}
+                  style={{ animationDelay: `${stepIdx * 0.2}s` }}
                 >
                   <div className='flex-shrink-0'>
                     {step.image && (
@@ -124,7 +106,7 @@ export default function StepsBlock({ data, lang }: StepsBlockProps) {
                       className='mt-4 font-[var(--font-body)]'
                     />
                   </div>
-                </motion.div>
+                </div>
 
                 {/* <!-- Animation Timeline --> */}
                 {data.steps && stepIdx !== data.steps.length - 1 && (

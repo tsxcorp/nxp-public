@@ -1,16 +1,15 @@
 'use client'
 
-import { Forms } from '@/data/directus-collections'
+import { Forms, FormField } from '@/directus/types'
 import { useState } from 'react'
 import VAlert from '@/components/base/VAlert'
-import directusApi from '@/data/directus-api'
+import directusApi from '@/directus/client'
 import { createItem } from '@directus/sdk'
 import { useForm } from 'react-hook-form'
 import { ErrorMessage } from '@hookform/error-message'
 import DirectusFormBuilder from '@/components/form/DirectusFormBuilder'
 import { cn } from '@/lib/utils/tw'
 import formTheme from '@/form.theme'
-import { FormSchema } from '@/data/directus-schema'
 import { useRouter } from '@/lib/navigation'
 
 interface FormProps {
@@ -18,8 +17,8 @@ interface FormProps {
   className?: string
 }
 
-function transformSchema(schema: Array<FormSchema> = []) {
-  return (schema || []).map((item) => {
+function transformSchema(schema: FormField[] = []) {
+  return schema.map((item) => {
     const newItem = { ...item };
     // Map type to FormKit-compatible type
     if (newItem.type === 'input') {
@@ -46,7 +45,7 @@ function transformSchema(schema: Array<FormSchema> = []) {
     }
     // Add validation rules
     if (newItem.validation) {
-      newItem.validation = newItem.validation; // Already a string, e.g., "email|required"
+      newItem.validation = newItem.validation;
     }
     // For select fields, ensure options are formatted
     if (newItem.type === 'select' && newItem.options) {
