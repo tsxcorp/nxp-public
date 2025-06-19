@@ -17,6 +17,9 @@ const devDomains = ['localhost', '127.0.0.1']
 // List of test domains that should use domain-based routing
 const testDomains = ['test-event.nexpo.vn']
 
+// List of production domains
+const productionDomains = ['event.nexpo.vn']
+
 export async function middleware(request: NextRequest) {
   // Get pathname and hostname from request
   const { pathname, hostname } = request.nextUrl
@@ -30,27 +33,44 @@ export async function middleware(request: NextRequest) {
 
   // For development domains, use slug-based routing
   if (devDomains.some(domain => hostname?.includes(domain))) {
+    console.log('[middleware] Development domain detected, using slug-based routing')
     return handleSlugBasedRouting(request, pathname)
   }
 
   // For test domains, use domain-based routing
   if (testDomains.some(domain => hostname?.includes(domain))) {
     console.log('[middleware] Test domain detected, using domain-based routing')
-    // For testing, we'll simulate finding a site for these domains
     const mockSiteSlug = hostname?.includes('event.nexpo.vn') ? 'nexpo' : 'test-site'
     return handleDomainBasedRouting(request, pathname, mockSiteSlug)
   }
 
-  // Try to find site by domain
-  const site = hostname ? await getSiteByDomain(hostname as string) : null
-  
-  if (site && site.slug) {
-    // Domain-based routing
-    console.log('[middleware] Found site for domain:', site.slug)
-    return handleDomainBasedRouting(request, pathname, site.slug)
-  } else {
-    // Fallback to slug-based routing
-    console.log('[middleware] No site found for domain, falling back to slug-based routing')
+  // For production domains
+  if (productionDomains.some(domain => hostname?.includes(domain))) {
+    console.log('[middleware] Production domain detected:', hostname)
+    // For event.nexpo.vn, we know it maps to 'nexpo'
+    if (hostname?.includes('event.nexpo.vn')) {
+      console.log('[middleware] Handling event.nexpo.vn with site slug: nexpo')
+      return handleDomainBasedRouting(request, pathname, 'nexpo')
+    }
+  }
+
+  // Try to find site by domain for any other domains
+  try {
+    console.log('[middleware] Attempting to find site for domain:', hostname)
+    const site = hostname ? await getSiteByDomain(hostname as string) : null
+    
+    if (site && site.slug) {
+      // Domain-based routing
+      console.log('[middleware] Found site for domain:', site.slug)
+      return handleDomainBasedRouting(request, pathname, site.slug)
+    } else {
+      // Fallback to slug-based routing
+      console.log('[middleware] No site found for domain, falling back to slug-based routing')
+      return handleSlugBasedRouting(request, pathname)
+    }
+  } catch (error) {
+    console.error('[middleware] Error finding site:', error)
+    // Fallback to slug-based routing on error
     return handleSlugBasedRouting(request, pathname)
   }
 }
