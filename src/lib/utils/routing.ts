@@ -1,8 +1,6 @@
 // Helper function to determine routing context
-export function getRoutingContext() {
-  if (typeof window === 'undefined') return { isDomainBased: false, siteSlug: 'nexpo' }
-  
-  const hostname = window.location.hostname
+export function getRoutingContext(hostnameOverride?: string) {
+  const hostname = hostnameOverride || (typeof window !== 'undefined' ? window.location.hostname : '')
   const isDevelopment = ['localhost', '127.0.0.1'].some(domain => hostname.includes(domain))
   
   if (isDevelopment) {
@@ -43,8 +41,8 @@ export function getCurrentLanguage(pathname: string): string {
 }
 
 // Helper function to build URL based on routing context
-export function buildUrl(lang: string, permalink: string): string {
-  const { isDomainBased, siteSlug } = getRoutingContext()
+export function buildUrl(lang: string, permalink: string, hostnameOverride?: string): string {
+  const { isDomainBased, siteSlug } = getRoutingContext(hostnameOverride)
   
   if (isDomainBased) {
     // Domain-based routing: /{lang}/{permalink}
@@ -52,5 +50,18 @@ export function buildUrl(lang: string, permalink: string): string {
   } else {
     // Slug-based routing: /{site}/{lang}/{permalink}
     return `/${siteSlug}/${lang}/${permalink}`
+  }
+}
+
+// Helper function to get default redirect URL based on routing context
+export function getDefaultRedirectUrl(hostnameOverride?: string): string {
+  const { isDomainBased, siteSlug } = getRoutingContext(hostnameOverride)
+  
+  if (isDomainBased) {
+    // Domain-based routing: redirect to default language
+    return '/en'
+  } else {
+    // Slug-based routing: redirect to site slug (without language)
+    return `/${siteSlug}`
   }
 } 

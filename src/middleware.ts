@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getSiteByDomain } from './directus/queries/sites'
+import { getDefaultRedirectUrl } from './lib/utils/routing'
 
 // List of all supported languages
 const supportedLanguages = ['en', 'vi']
@@ -20,15 +21,20 @@ export async function middleware(request: NextRequest) {
   const { pathname, hostname } = request.nextUrl
   console.log('[middleware] Processing:', { pathname, hostname })
 
-  // Skip internal paths
-  if (pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname === '/favicon.ico') {
+  // Skip internal paths or special routes
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname === '/favicon.ico' ||
+    pathname.startsWith('/test-routing') // <-- skip test page
+  ) {
     return NextResponse.next()
   }
 
   // Check if this is a development domain (localhost, etc.)
   if (devDomains.some(domain => hostname?.includes(domain))) {
     console.log('[middleware] Development domain - using slug-based routing')
-    return handleSlugBasedRouting(request, pathname)
+    return handleSlugBasedRouting(request, pathname, hostname)
   }
 
   // Check if this is a production domain with mapping
@@ -51,10 +57,10 @@ export async function middleware(request: NextRequest) {
 
   // Fallback to slug-based routing
   console.log('[middleware] Fallback to slug-based routing')
-  return handleSlugBasedRouting(request, pathname)
+  return handleSlugBasedRouting(request, pathname, hostname)
 }
 
-function handleSlugBasedRouting(request: NextRequest, pathname: string) {
+function handleSlugBasedRouting(request: NextRequest, pathname: string, hostname: string) {
   // Pattern: /[site]/[lang] or /[site]/[lang]/...
   const slugBasedPattern = /^\/([a-zA-Z0-9_-]+)\/([a-zA-Z-]{2,5})(\/.*)?$/
   
@@ -78,15 +84,9 @@ function handleSlugBasedRouting(request: NextRequest, pathname: string) {
     return NextResponse.redirect(newUrl)
   }
 
-  // If root path, redirect to default site and language
-  if (pathname === '/') {
-    const newUrl = new URL('/nexpo/en', request.url)
-    console.log('[middleware] Root redirect to default site:', newUrl.pathname)
-    return NextResponse.redirect(newUrl)
-  }
-
-  // For any other path, redirect to default site with default language
-  const newUrl = new URL(`/nexpo/en${pathname}`, request.url)
+  // If root path or any other path, redirect to default site (without language)
+  const defaultRedirectPath = getDefaultRedirectUrl(hostname)
+  const newUrl = new URL(defaultRedirectPath, request.url)
   console.log('[middleware] Redirecting to default site:', newUrl.pathname)
   return NextResponse.redirect(newUrl)
 }
