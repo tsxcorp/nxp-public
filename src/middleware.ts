@@ -44,7 +44,7 @@ export async function middleware(request: NextRequest) {
   // Try to find site by domain
   const site = hostname ? await getSiteByDomain(hostname as string) : null
   
-  if (site) {
+  if (site && site.slug) {
     // Domain-based routing
     console.log('[middleware] Found site for domain:', site.slug)
     return handleDomainBasedRouting(request, pathname, site.slug)
