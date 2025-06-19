@@ -100,8 +100,8 @@ export default function LocaleSwitcher({ locales = [], site, translations = [], 
       permalink = '';
     }
 
-    // Build URL using utility function
-    const newUrl = buildUrl(langItem, permalink);
+    // Build URL using utility function with current pathname
+    const newUrl = buildUrl(langItem, permalink, undefined, currentPathname);
 
     console.log('[LocaleSwitcher] Switching to:', newUrl);
 

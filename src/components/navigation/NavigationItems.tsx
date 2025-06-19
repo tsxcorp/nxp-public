@@ -22,7 +22,7 @@ interface ExtendedNavigationItem extends NavigationItem {
   page?: PageType
 }
 
-function getUrl(item: ExtendedNavigationItem, currentLang: string) {
+function getUrl(item: ExtendedNavigationItem, currentLang: string, currentPathname: string) {
   let permalink = ''
   
   if (item.type === 'page' && typeof item.page !== 'string') {
@@ -42,24 +42,26 @@ function getUrl(item: ExtendedNavigationItem, currentLang: string) {
     permalink = item.url?.startsWith('/') ? item.url.slice(1) : item.url || ''
   }
   
-  // Build URL using utility function
-  return buildUrl(currentLang, permalink)
+  // Build URL using utility function with current pathname
+  return buildUrl(currentLang, permalink, undefined, currentPathname)
 }
 
 function NavigationChildrenItems({
   items,
   detail = true,
   currentLang,
+  currentPathname,
 }: {
   items: ExtendedNavigationItem[]
   detail?: boolean
   currentLang: string
+  currentPathname: string
 }) {
   return (
     <>
       {items.map((childItem) => (
         <li key={childItem.id}>
-          <Link href={getUrl(childItem, currentLang)}>
+          <Link href={getUrl(childItem, currentLang, currentPathname)}>
             {detail && childItem.icon && (
               <VIcon
                 icon={convertIconName(childItem.icon)}
@@ -81,10 +83,12 @@ function NavigationItem({
   item,
   mobile = false,
   currentLang,
+  currentPathname,
 }: {
   item: ExtendedNavigationItem
   mobile?: boolean
   currentLang: string
+  currentPathname: string
 }) {
   // https://reacthustle.com/blog/how-to-close-daisyui-dropdown-with-one-click
   const handleClick = () => {
@@ -100,7 +104,7 @@ function NavigationItem({
       {!item.has_children && (
         <li onClick={handleClick}>
           <Link
-            href={getUrl(item, currentLang)}
+            href={getUrl(item, currentLang, currentPathname)}
             target={item.open_in_new_tab ? '_blank' : '_self'}
           >
             {!mobile && item.icon && (
@@ -119,6 +123,7 @@ function NavigationItem({
                 detail={true}
                 items={item.children}
                 currentLang={currentLang}
+                currentPathname={currentPathname}
               ></NavigationChildrenItems>
             </ul>
           </details>
@@ -132,6 +137,7 @@ function NavigationItem({
               detail={false}
               items={item.children}
               currentLang={currentLang}
+              currentPathname={currentPathname}
             ></NavigationChildrenItems>
           </ul>
         </li>
@@ -171,6 +177,7 @@ function NavigationItemsContent({
             key={item.id}
             item={item}
             currentLang={currentLang}
+            currentPathname={pathname}
           ></NavigationItem>
         ))}
       </ul>

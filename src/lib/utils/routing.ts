@@ -4,7 +4,9 @@ export function getRoutingContext(hostnameOverride?: string) {
   const isDevelopment = ['localhost', '127.0.0.1'].some(domain => hostname.includes(domain))
   
   if (isDevelopment) {
-    return { isDomainBased: false, siteSlug: 'nexpo' }
+    // For development, we need to extract site slug from pathname
+    // This should be handled by the application logic, not hardcoded
+    return { isDomainBased: false, siteSlug: null }
   }
   
   // Check if this is a production domain with mapping
@@ -18,7 +20,7 @@ export function getRoutingContext(hostnameOverride?: string) {
   }
   
   // For other domains, assume domain-based routing
-  return { isDomainBased: true, siteSlug: 'nexpo' }
+  return { isDomainBased: true, siteSlug: null }
 }
 
 // Helper function to get current language from pathname
@@ -40,11 +42,27 @@ export function getCurrentLanguage(pathname: string): string {
   return 'en' // default fallback
 }
 
+// Helper function to get site slug from pathname
+export function getSiteSlugFromPathname(pathname: string): string | null {
+  const pathSegments = pathname.split('/').filter(Boolean)
+  
+  // For slug-based routing, site slug is the first segment
+  if (pathSegments.length > 0) {
+    const firstSegment = pathSegments[0]
+    // Check if first segment is not a language (to avoid confusion)
+    if (!['en', 'vi'].includes(firstSegment)) {
+      return firstSegment
+    }
+  }
+  
+  return null
+}
+
 // Helper function to build URL based on routing context
-export function buildUrl(lang: string, permalink: string, hostnameOverride?: string): string {
+export function buildUrl(lang: string, permalink: string, hostnameOverride?: string, currentPathname?: string): string {
   const { isDomainBased, siteSlug } = getRoutingContext(hostnameOverride)
   
-  console.log('[buildUrl] Debug:', { lang, permalink, hostnameOverride, isDomainBased, siteSlug })
+  console.log('[buildUrl] Debug:', { lang, permalink, hostnameOverride, isDomainBased, siteSlug, currentPathname })
   
   if (isDomainBased) {
     // Domain-based routing: /{lang}/{permalink}
@@ -54,7 +72,9 @@ export function buildUrl(lang: string, permalink: string, hostnameOverride?: str
     return url
   } else {
     // Slug-based routing: /{site}/{lang}/{permalink}
-    const url = `/${siteSlug}/${lang}/${permalink}`
+    // Get site slug from current pathname or use provided siteSlug
+    const currentSiteSlug = siteSlug || (currentPathname ? getSiteSlugFromPathname(currentPathname) : null) || 'nexpo'
+    const url = `/${currentSiteSlug}/${lang}/${permalink}`
     console.log('[buildUrl] Slug-based URL:', url)
     return url
   }

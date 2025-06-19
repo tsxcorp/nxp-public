@@ -78,14 +78,20 @@ function handleSlugBasedRouting(request: NextRequest, pathname: string) {
     // This shouldn't happen in slug-based routing, but if it does, redirect to default site
     const [, lang, ...rest] = pathname.split('/')
     const remainingPath = rest.join('/')
-    const newUrl = new URL(`/nexpo/${lang}${remainingPath ? `/${remainingPath}` : ''}`, request.url)
+    
+    // Get the site slug from the first segment of the path or use a default
+    const pathSegments = pathname.split('/').filter(Boolean)
+    const defaultSiteSlug = pathSegments[0] || 'nexpo' // fallback to nexpo if no site slug found
+    
+    const newUrl = new URL(`/${defaultSiteSlug}/${lang}${remainingPath ? `/${remainingPath}` : ''}`, request.url)
     console.log('[middleware] Redirecting to default site:', newUrl.pathname)
     return NextResponse.redirect(newUrl)
   }
 
   // If root path or any other path, redirect to default site homepage
-  const newUrl = new URL('/nexpo', request.url)
-  console.log('[middleware] Redirecting to default site homepage:', newUrl.pathname)
+  // For now, redirect to root and let the application handle site selection
+  const newUrl = new URL('/', request.url)
+  console.log('[middleware] Redirecting to root:', newUrl.pathname)
   return NextResponse.redirect(newUrl)
 }
 
