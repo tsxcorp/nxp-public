@@ -13,10 +13,25 @@ interface ExtendedNavigationItem extends NavigationItem {
 }
 
 function getUrl(item: ExtendedNavigationItem) {
+  // Check if we're using domain-based routing
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+  const isDomainBased = hostname && !['localhost', '127.0.0.1'].includes(hostname);
+  const currentLang = typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : 'en';
+
   if (item.type === 'page' && typeof item.page !== 'string') {
-    return `/${item.page?.translations[0]?.permalink}`
+    const permalink = item.page?.translations[0]?.permalink || '';
+    return isDomainBased
+      ? `/${currentLang}${permalink ? `/${permalink}` : ''}`
+      : `/${item.page?.translations[0]?.permalink}`;
   } else {
-    return item?.url ?? ''
+    // For external URLs, return as is
+    if (item.url?.startsWith('http')) {
+      return item.url;
+    }
+    // For internal URLs, handle domain-based routing
+    return isDomainBased
+      ? `/${currentLang}${item.url?.startsWith('/') ? item.url : `/${item.url || ''}`}`
+      : item.url || '';
   }
 }
 
