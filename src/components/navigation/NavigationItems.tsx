@@ -1,6 +1,6 @@
 'use client'
 import type { NavigationItem } from '@/directus/types'
-import { Link } from '@/lib/navigation'
+import { Link, usePathname } from '@/lib/navigation'
 import VIcon from '@/components/base/VIcon'
 import { convertIconName } from '@/lib/utils/strings'
 
@@ -21,10 +21,7 @@ interface ExtendedNavigationItem extends NavigationItem {
   page?: PageType
 }
 
-function getUrl(item: ExtendedNavigationItem) {
-  // Get current language from pathname
-  const currentLang = typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : 'en';
-
+function getUrl(item: ExtendedNavigationItem, currentLang: string) {
   if (item.type === 'page' && typeof item.page !== 'string') {
     // Find translation for current language
     const translation = item.page?.translations?.find(t => 
@@ -51,15 +48,17 @@ function getUrl(item: ExtendedNavigationItem) {
 function NavigationChildrenItems({
   items,
   detail = true,
+  currentLang,
 }: {
   items: ExtendedNavigationItem[]
   detail?: boolean
+  currentLang: string
 }) {
   return (
     <>
       {items.map((childItem) => (
         <li key={childItem.id}>
-          <Link href={getUrl(childItem)}>
+          <Link href={getUrl(childItem, currentLang)}>
             {detail && childItem.icon && (
               <VIcon
                 icon={convertIconName(childItem.icon)}
@@ -80,9 +79,11 @@ function NavigationChildrenItems({
 function NavigationItem({
   item,
   mobile = false,
+  currentLang,
 }: {
   item: ExtendedNavigationItem
   mobile?: boolean
+  currentLang: string
 }) {
   // https://reacthustle.com/blog/how-to-close-daisyui-dropdown-with-one-click
   const handleClick = () => {
@@ -98,7 +99,7 @@ function NavigationItem({
       {!item.has_children && (
         <li onClick={handleClick}>
           <Link
-            href={getUrl(item)}
+            href={getUrl(item, currentLang)}
             target={item.open_in_new_tab ? '_blank' : '_self'}
           >
             {!mobile && item.icon && (
@@ -116,6 +117,7 @@ function NavigationItem({
               <NavigationChildrenItems
                 detail={true}
                 items={item.children}
+                currentLang={currentLang}
               ></NavigationChildrenItems>
             </ul>
           </details>
@@ -128,6 +130,7 @@ function NavigationItem({
             <NavigationChildrenItems
               detail={false}
               items={item.children}
+              currentLang={currentLang}
             ></NavigationChildrenItems>
           </ul>
         </li>
@@ -136,7 +139,7 @@ function NavigationItem({
   )
 }
 
-export default function NavigationItems({
+function NavigationItemsContent({
   items,
   mobile,
   className,
@@ -147,6 +150,23 @@ export default function NavigationItems({
   className?: string
   tabIndex?: number
 }) {
+  const pathname = usePathname();
+  const pathSegments = pathname.split('/').filter(Boolean);
+  
+  // For domain-based routing, language is the first segment
+  // For slug-based routing, language is the second segment after site slug
+  let currentLang = 'en'; // default fallback
+  
+  if (pathSegments.length > 0) {
+    // Check if first segment is a language
+    if (['en', 'vi'].includes(pathSegments[0])) {
+      currentLang = pathSegments[0];
+    } else if (pathSegments.length > 1 && ['en', 'vi'].includes(pathSegments[1])) {
+      // For slug-based routing, language is second segment
+      currentLang = pathSegments[1];
+    }
+  }
+
   const handleClick = () => {
     const elem = document.activeElement
     if (elem) {
@@ -163,9 +183,31 @@ export default function NavigationItems({
             mobile={mobile}
             key={item.id}
             item={item}
+            currentLang={currentLang}
           ></NavigationItem>
         ))}
       </ul>
     </>
+  )
+}
+
+export default function NavigationItems({
+  items,
+  mobile,
+  className,
+  tabIndex,
+}: {
+  items: ExtendedNavigationItem[]
+  mobile?: boolean
+  className?: string
+  tabIndex?: number
+}) {
+  return (
+    <NavigationItemsContent
+      items={items}
+      mobile={mobile}
+      className={className}
+      tabIndex={tabIndex}
+    />
   )
 }
