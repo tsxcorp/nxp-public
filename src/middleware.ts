@@ -120,9 +120,14 @@ function handleDomainBasedRouting(request: NextRequest, pathname: string, siteSl
   )
 
   if (pathnameHasLanguage) {
+    // Extract language and remaining path
+    const [, lang, ...rest] = pathname.split('/')
+    const remainingPath = rest.join('/')
+    
     // Rewrite URL to include site slug for internal routing
     const newUrl = request.nextUrl.clone()
-    newUrl.pathname = `/${siteSlug}${pathname}`
+    newUrl.pathname = `/${siteSlug}/${lang}${remainingPath ? `/${remainingPath}` : ''}`
+    console.log('[middleware] Rewriting URL to:', newUrl.pathname)
     return NextResponse.rewrite(newUrl)
   }
 
