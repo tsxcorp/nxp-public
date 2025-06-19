@@ -98,7 +98,16 @@ export default function LocaleSwitcher({ locales = [], site, translations = [], 
     if (!translation || !permalink || permalink === '/') {
       permalink = '';
     }
-    const newUrl = `/${site}/${langItem}${permalink.startsWith('/') ? permalink : permalink ? '/' + permalink : ''}`;
+
+    // Check if we're using domain-based routing
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+    const isDomainBased = hostname && !['localhost', '127.0.0.1'].includes(hostname);
+
+    // If using domain-based routing, don't include site in URL
+    const newUrl = isDomainBased
+      ? `/${langItem}${permalink.startsWith('/') ? permalink : permalink ? '/' + permalink : ''}`
+      : `/${site}/${langItem}${permalink.startsWith('/') ? permalink : permalink ? '/' + permalink : ''}`;
+
     startTransition(() => {
       router.push(newUrl);
       router.refresh();
