@@ -1,6 +1,16 @@
 import React from 'react';
 import '@/app/globals.css'; // Đảm bảo Tailwind được import
+import { getTranslations } from '@/i18n/i18n'
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default async function SiteLayout({
+  children,
+  params: { lang },
+}: {
+  children: React.ReactNode
+  params: { lang: string }
+}) {
+  // Initialize i18n instance
+  await getTranslations({ locale: lang })
+
   return <>{children}</>;
 } 

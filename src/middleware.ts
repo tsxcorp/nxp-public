@@ -15,7 +15,7 @@ const defaultSite = 'nexpo'
 const devDomains = ['localhost', '127.0.0.1']
 
 // List of test domains that should use domain-based routing
-const testDomains = ['event.nexpo.vn', 'test-event.nexpo.vn']
+const testDomains = ['test-event.nexpo.vn']
 
 export async function middleware(request: NextRequest) {
   // Get pathname and hostname from request
