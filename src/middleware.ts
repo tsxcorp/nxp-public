@@ -39,11 +39,11 @@ export async function middleware(request: NextRequest) {
     return handleSlugBasedRouting(request, pathname)
   }
 
-  // For production domains
+  // For production domains or test domains
   const siteSlug = productionDomains[hostname as keyof typeof productionDomains]
-  if (siteSlug) {
-    console.log('[middleware] Production domain detected:', hostname)
-    return handleDomainBasedRouting(request, pathname, siteSlug)
+  if (siteSlug || testDomains.includes(hostname)) {
+    console.log('[middleware] Production/Test domain detected:', hostname)
+    return handleDomainBasedRouting(request, pathname, siteSlug || defaultSite)
   }
 
   // For any other domains, try to find site mapping
@@ -111,14 +111,18 @@ function handleDomainBasedRouting(request: NextRequest, pathname: string, siteSl
     const [, lang, ...rest] = pathname.split('/')
     const remainingPath = rest.join('/')
 
-    // For internal Next.js routing, we need the site slug
+    // For domain-based routing, we only need to rewrite for internal routing
     const newUrl = request.nextUrl.clone()
     newUrl.pathname = `/${siteSlug}/${lang}${remainingPath ? `/${remainingPath}` : ''}`
-    console.log('[middleware] Rewriting to:', newUrl.pathname)
-    return NextResponse.rewrite(newUrl)
+    console.log('[middleware] Internal rewrite to:', newUrl.pathname)
+    
+    // Return rewrite for internal routing, but keep the URL clean for users
+    const response = NextResponse.rewrite(newUrl)
+    return response
   }
 
   // If no language prefix, redirect to default language
+  // Keep the URL clean without site slug for domain-based routing
   const newUrl = new URL(`/${defaultLanguage}${pathname === '/' ? '' : pathname}`, request.url)
   console.log('[middleware] Redirecting to:', newUrl.pathname)
   return NextResponse.redirect(newUrl)
