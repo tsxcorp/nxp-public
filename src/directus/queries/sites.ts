@@ -51,4 +51,45 @@ export const getSite = async (siteSlug: string): Promise<Sites | null> => {
 
     return sites[0];
   }, getMockSite(siteSlug), `getSite(${siteSlug})`);
+};
+
+export const getSiteByDomain = async (domain: string): Promise<Sites | null> => {
+  console.log('\n=== Fetch Site by Domain ===');
+  console.log('Domain:', domain);
+
+  return await safeApiCall(async () => {
+    const sites = await directus.request(
+      withRevalidate(
+        readItems('sites' as any, {
+          filter: {
+            domain: {
+              _eq: domain
+            }
+          },
+          fields: [
+            '*',
+            'languages.*',
+          ],
+          limit: 1
+        }),
+        60
+      )
+    ) as Sites[];
+
+    console.log('Raw site response:', sites);
+
+    if (!sites[0]) {
+      console.log('❌ No site found for domain');
+      return null;
+    }
+
+    console.log('✅ Site found:', {
+      id: sites[0].id,
+      name: sites[0].name,
+      navigation: sites[0].navigation,
+      status: sites[0].status
+    });
+
+    return sites[0];
+  }, null, `getSiteByDomain(${domain})`);
 }; 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { getSiteByDomain } from './directus/queries/sites'
 
 // List of all supported languages
 const supportedLanguages = ['en', 'vi']
@@ -10,16 +11,51 @@ const defaultLanguage = 'en'
 // Default site (nếu muốn redirect root)
 const defaultSite = 'nexpo'
 
-export function middleware(request: NextRequest) {
-  // Get pathname from request
-  const pathname = request.nextUrl.pathname
+// List of development domains that should use slug-based routing
+const devDomains = ['localhost', '127.0.0.1']
+
+// List of test domains that should use domain-based routing
+const testDomains = ['event.nexpo.vn', 'test-event.nexpo.vn']
+
+export async function middleware(request: NextRequest) {
+  // Get pathname and hostname from request
+  const { pathname, hostname } = request.nextUrl
   console.log('[middleware] Processing path:', pathname)
+  console.log('[middleware] Hostname:', hostname)
 
   // Skip if it's an internal path
   if (pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname === '/favicon.ico') {
     return NextResponse.next()
   }
 
+  // For development domains, use slug-based routing
+  if (devDomains.some(domain => hostname?.includes(domain))) {
+    return handleSlugBasedRouting(request, pathname)
+  }
+
+  // For test domains, use domain-based routing
+  if (testDomains.some(domain => hostname?.includes(domain))) {
+    console.log('[middleware] Test domain detected, using domain-based routing')
+    // For testing, we'll simulate finding a site for these domains
+    const mockSiteSlug = hostname?.includes('event.nexpo.vn') ? 'nexpo' : 'test-site'
+    return handleDomainBasedRouting(request, pathname, mockSiteSlug)
+  }
+
+  // Try to find site by domain
+  const site = hostname ? await getSiteByDomain(hostname as string) : null
+  
+  if (site) {
+    // Domain-based routing
+    console.log('[middleware] Found site for domain:', site.slug)
+    return handleDomainBasedRouting(request, pathname, site.slug)
+  } else {
+    // Fallback to slug-based routing
+    console.log('[middleware] No site found for domain, falling back to slug-based routing')
+    return handleSlugBasedRouting(request, pathname)
+  }
+}
+
+function handleSlugBasedRouting(request: NextRequest, pathname: string) {
   // Regex: /[site]/[lang] hoặc /[site]/[lang]/...
   const multitenantPattern = /^\/([a-zA-Z0-9_-]+)\/([a-zA-Z-]{2,5})(\/|$)/
 
@@ -55,6 +91,23 @@ export function middleware(request: NextRequest) {
 
   // Nếu là root, cho đi qua (không redirect)
   return NextResponse.next()
+}
+
+function handleDomainBasedRouting(request: NextRequest, pathname: string, siteSlug: string) {
+  // Check if the pathname already has a language prefix
+  const pathnameHasLanguage = supportedLanguages.some(
+    (lang) => pathname.startsWith(`/${lang}/`) || pathname === `/${lang}`
+  )
+
+  if (pathnameHasLanguage) {
+    // Rewrite URL to include site slug for internal routing
+    const newUrl = request.nextUrl.clone()
+    newUrl.pathname = `/${siteSlug}${pathname}`
+    return NextResponse.rewrite(newUrl)
+  }
+
+  // If no language prefix, redirect to default language
+  return NextResponse.redirect(new URL(`/${defaultLanguage}${pathname === '/' ? '' : pathname}`, request.url))
 }
 
 // Configure which paths the middleware should run on
