@@ -17,8 +17,10 @@ const devDomains = ['localhost', '127.0.0.1']
 // List of test domains that should use domain-based routing
 const testDomains = ['test-event.nexpo.vn']
 
-// List of production domains
-const productionDomains = ['event.nexpo.vn']
+// List of production domains and their site mappings
+const productionDomains = {
+  'event.nexpo.vn': 'nexpo'
+}
 
 export async function middleware(request: NextRequest) {
   // Get pathname and hostname from request
@@ -37,42 +39,27 @@ export async function middleware(request: NextRequest) {
     return handleSlugBasedRouting(request, pathname)
   }
 
-  // For test domains, use domain-based routing
-  if (testDomains.some(domain => hostname?.includes(domain))) {
-    console.log('[middleware] Test domain detected, using domain-based routing')
-    const mockSiteSlug = hostname?.includes('event.nexpo.vn') ? 'nexpo' : 'test-site'
-    return handleDomainBasedRouting(request, pathname, mockSiteSlug)
-  }
-
   // For production domains
-  if (productionDomains.some(domain => hostname?.includes(domain))) {
+  const siteSlug = productionDomains[hostname as keyof typeof productionDomains]
+  if (siteSlug) {
     console.log('[middleware] Production domain detected:', hostname)
-    // For event.nexpo.vn, we know it maps to 'nexpo'
-    if (hostname?.includes('event.nexpo.vn')) {
-      console.log('[middleware] Handling event.nexpo.vn with site slug: nexpo')
-      return handleDomainBasedRouting(request, pathname, 'nexpo')
-    }
+    return handleDomainBasedRouting(request, pathname, siteSlug)
   }
 
-  // Try to find site by domain for any other domains
+  // For any other domains, try to find site mapping
   try {
     console.log('[middleware] Attempting to find site for domain:', hostname)
     const site = hostname ? await getSiteByDomain(hostname as string) : null
     
     if (site && site.slug) {
-      // Domain-based routing
-      console.log('[middleware] Found site for domain:', site.slug)
       return handleDomainBasedRouting(request, pathname, site.slug)
-    } else {
-      // Fallback to slug-based routing
-      console.log('[middleware] No site found for domain, falling back to slug-based routing')
-      return handleSlugBasedRouting(request, pathname)
     }
   } catch (error) {
     console.error('[middleware] Error finding site:', error)
-    // Fallback to slug-based routing on error
-    return handleSlugBasedRouting(request, pathname)
   }
+
+  // Fallback to slug-based routing
+  return handleSlugBasedRouting(request, pathname)
 }
 
 function handleSlugBasedRouting(request: NextRequest, pathname: string) {
@@ -123,25 +110,18 @@ function handleDomainBasedRouting(request: NextRequest, pathname: string, siteSl
     // Extract language and remaining path
     const [, lang, ...rest] = pathname.split('/')
     const remainingPath = rest.join('/')
-    
-    // Check if the path already contains the site slug
-    const hasSiteSlug = remainingPath.startsWith(`${siteSlug}/`)
-    
-    // Rewrite URL to include site slug for internal routing, but avoid duplicate site slug
+
+    // For internal Next.js routing, we need the site slug
     const newUrl = request.nextUrl.clone()
-    if (hasSiteSlug) {
-      // If path already has site slug, use as is
-      newUrl.pathname = pathname
-    } else {
-      // Add site slug for internal routing
-      newUrl.pathname = `/${siteSlug}/${lang}${remainingPath ? `/${remainingPath}` : ''}`
-    }
-    console.log('[middleware] Rewriting URL to:', newUrl.pathname)
+    newUrl.pathname = `/${siteSlug}/${lang}${remainingPath ? `/${remainingPath}` : ''}`
+    console.log('[middleware] Rewriting to:', newUrl.pathname)
     return NextResponse.rewrite(newUrl)
   }
 
   // If no language prefix, redirect to default language
-  return NextResponse.redirect(new URL(`/${defaultLanguage}${pathname === '/' ? '' : pathname}`, request.url))
+  const newUrl = new URL(`/${defaultLanguage}${pathname === '/' ? '' : pathname}`, request.url)
+  console.log('[middleware] Redirecting to:', newUrl.pathname)
+  return NextResponse.redirect(newUrl)
 }
 
 // Configure which paths the middleware should run on

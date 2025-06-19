@@ -6,9 +6,6 @@ import { convertIconName } from '@/lib/utils/strings'
 
 interface PageType {
   id: string
-  site?: {
-    slug: string
-  }
   translations: {
     languages_code: string
     permalink: string
@@ -21,17 +18,10 @@ interface ExtendedNavigationItem extends NavigationItem {
   open_in_new_tab?: boolean
   label?: string
   children?: ExtendedNavigationItem[]
-  site?: {
-    slug: string
-  }
   page?: PageType
 }
 
 function getUrl(item: ExtendedNavigationItem) {
-  // Check if we're using domain-based routing
-  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-  const isDomainBased = hostname && !['localhost', '127.0.0.1'].includes(hostname);
-  
   // Get current language from pathname
   const currentLang = typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : 'en';
 
@@ -43,25 +33,18 @@ function getUrl(item: ExtendedNavigationItem) {
     
     // Use current language translation if available, otherwise fallback to first translation
     const permalink = translation?.permalink || item.page?.translations[0]?.permalink || '';
-
-    // For domain-based routing (event.nexpo.vn), just use /{lang}/{permalink}
-    if (isDomainBased) {
-      return `/${currentLang}/${permalink}`;
-    }
     
-    // For localhost, use full path with site slug
-    return `/${item.page?.site?.slug || 'nexpo'}/${currentLang}/${permalink}`;
+    // Always use /{lang}/{permalink} format
+    return `/${currentLang}/${permalink}`;
   } else {
     // For external URLs, return as is
     if (item.url?.startsWith('http')) {
       return item.url;
     }
     
-    // For internal URLs
+    // For internal URLs, always use /{lang}/{url} format
     const cleanUrl = item.url?.startsWith('/') ? item.url.slice(1) : item.url || '';
-    return isDomainBased
-      ? `/${currentLang}/${cleanUrl}`
-      : `/${item.site?.slug || 'nexpo'}/${currentLang}/${cleanUrl}`;
+    return `/${currentLang}/${cleanUrl}`;
   }
 }
 
