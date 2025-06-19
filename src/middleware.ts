@@ -8,14 +8,8 @@ const supportedLanguages = ['en', 'vi']
 // Default language
 const defaultLanguage = 'en'
 
-// Default site (nếu muốn redirect root)
-const defaultSite = 'nexpo'
-
 // List of development domains that should use slug-based routing
 const devDomains = ['localhost', '127.0.0.1']
-
-// List of test domains that should use domain-based routing
-const testDomains = ['test-event.nexpo.vn']
 
 // List of production domains and their site mappings
 const productionDomains = {
@@ -23,35 +17,32 @@ const productionDomains = {
 }
 
 export async function middleware(request: NextRequest) {
-  // Get pathname and hostname from request
   const { pathname, hostname } = request.nextUrl
-  console.log('[middleware] Processing path:', pathname)
-  console.log('[middleware] Hostname:', hostname)
+  console.log('[middleware] Processing:', { pathname, hostname })
 
-  // Skip if it's an internal path
+  // Skip internal paths
   if (pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname === '/favicon.ico') {
     return NextResponse.next()
   }
 
-  // For development domains, use slug-based routing
+  // Check if this is a development domain (localhost, etc.)
   if (devDomains.some(domain => hostname?.includes(domain))) {
-    console.log('[middleware] Development domain detected, using slug-based routing')
+    console.log('[middleware] Development domain - using slug-based routing')
     return handleSlugBasedRouting(request, pathname)
   }
 
-  // For production domains or test domains
+  // Check if this is a production domain with mapping
   const siteSlug = productionDomains[hostname as keyof typeof productionDomains]
-  if (siteSlug || testDomains.includes(hostname)) {
-    console.log('[middleware] Production/Test domain detected:', hostname)
-    return handleDomainBasedRouting(request, pathname, siteSlug || defaultSite)
+  if (siteSlug) {
+    console.log('[middleware] Production domain with mapping - using domain-based routing')
+    return handleDomainBasedRouting(request, pathname, siteSlug)
   }
 
-  // For any other domains, try to find site mapping
+  // Try to find site mapping from database
   try {
-    console.log('[middleware] Attempting to find site for domain:', hostname)
-    const site = hostname ? await getSiteByDomain(hostname as string) : null
-    
-    if (site && site.slug) {
+    const site = hostname ? await getSiteByDomain(hostname) : null
+    if (site?.slug) {
+      console.log('[middleware] Found site mapping from DB - using domain-based routing')
       return handleDomainBasedRouting(request, pathname, site.slug)
     }
   } catch (error) {
@@ -59,79 +50,75 @@ export async function middleware(request: NextRequest) {
   }
 
   // Fallback to slug-based routing
+  console.log('[middleware] Fallback to slug-based routing')
   return handleSlugBasedRouting(request, pathname)
 }
 
 function handleSlugBasedRouting(request: NextRequest, pathname: string) {
-  // Regex: /[site]/[lang] hoặc /[site]/[lang]/...
-  const multitenantPattern = /^\/([a-zA-Z0-9_-]+)\/([a-zA-Z-]{2,5})(\/|$)/
-
-  if (multitenantPattern.test(pathname)) {
-    // Đúng multitenant-first, cho đi qua
-    console.log('[middleware] Path matches multitenant-first, pass through')
+  // Pattern: /[site]/[lang] or /[site]/[lang]/...
+  const slugBasedPattern = /^\/([a-zA-Z0-9_-]+)\/([a-zA-Z-]{2,5})(\/.*)?$/
+  
+  if (slugBasedPattern.test(pathname)) {
+    // Already in correct format, pass through
+    console.log('[middleware] Path already in slug-based format')
     return NextResponse.next()
   }
 
-  // Check if the pathname already has a language prefix
-  const pathnameHasLanguage = supportedLanguages.some(
-    (lang) => pathname.startsWith(`/${lang}/`) || pathname === `/${lang}`
+  // If pathname has language prefix but no site slug, redirect to default site
+  const hasLanguagePrefix = supportedLanguages.some(lang => 
+    pathname.startsWith(`/${lang}/`) || pathname === `/${lang}`
   )
-
-  // If pathname already has language prefix, let it pass through
-  if (pathnameHasLanguage) {
-    console.log('[middleware] Path already has language prefix')
-    return NextResponse.next()
-  }
-
-  // Nếu là /[site] (chỉ có 1 segment), redirect thành /[site]/[defaultLanguage]
-  const siteOnlyPattern = /^\/([a-zA-Z0-9_-]+)$/.exec(pathname)
-  if (siteOnlyPattern) {
-    const site = siteOnlyPattern[1]
-    return NextResponse.redirect(new URL(`/${site}/${defaultLanguage}`, request.url))
-  }
-
-  // Nếu thiếu site/lang, nhưng KHÔNG phải root, thì redirect như cũ
-  if (pathname !== '/') {
-    console.log('[middleware] Path missing site/lang, redirecting')
-    return NextResponse.redirect(new URL(`/${defaultSite}/${defaultLanguage}${pathname.startsWith('/') ? '' : '/'}${pathname}`, request.url))
-  }
-
-  // Nếu là root, cho đi qua (không redirect)
-  return NextResponse.next()
-}
-
-function handleDomainBasedRouting(request: NextRequest, pathname: string, siteSlug: string) {
-  // Check if the pathname already has a language prefix
-  const pathnameHasLanguage = supportedLanguages.some(
-    (lang) => pathname.startsWith(`/${lang}/`) || pathname === `/${lang}`
-  )
-
-  if (pathnameHasLanguage) {
-    // Extract language and remaining path
+  
+  if (hasLanguagePrefix) {
+    // This shouldn't happen in slug-based routing, but if it does, redirect to default site
     const [, lang, ...rest] = pathname.split('/')
     const remainingPath = rest.join('/')
-
-    // For domain-based routing, we only need to rewrite for internal routing
-    const newUrl = request.nextUrl.clone()
-    newUrl.pathname = `/${siteSlug}/${lang}${remainingPath ? `/${remainingPath}` : ''}`
-    console.log('[middleware] Internal rewrite to:', newUrl.pathname)
-    
-    // Return rewrite for internal routing, but keep the URL clean for users
-    const response = NextResponse.rewrite(newUrl)
-    return response
+    const newUrl = new URL(`/nexpo/${lang}${remainingPath ? `/${remainingPath}` : ''}`, request.url)
+    console.log('[middleware] Redirecting to default site:', newUrl.pathname)
+    return NextResponse.redirect(newUrl)
   }
 
-  // If no language prefix, redirect to default language
-  // Keep the URL clean without site slug for domain-based routing
-  const newUrl = new URL(`/${defaultLanguage}${pathname === '/' ? '' : pathname}`, request.url)
-  console.log('[middleware] Redirecting to:', newUrl.pathname)
+  // If root path, redirect to default site and language
+  if (pathname === '/') {
+    const newUrl = new URL('/nexpo/en', request.url)
+    console.log('[middleware] Root redirect to default site:', newUrl.pathname)
+    return NextResponse.redirect(newUrl)
+  }
+
+  // For any other path, redirect to default site with default language
+  const newUrl = new URL(`/nexpo/en${pathname}`, request.url)
+  console.log('[middleware] Redirecting to default site:', newUrl.pathname)
   return NextResponse.redirect(newUrl)
 }
 
-// Configure which paths the middleware should run on
+function handleDomainBasedRouting(request: NextRequest, pathname: string, siteSlug: string) {
+  // Check if pathname has language prefix
+  const hasLanguagePrefix = supportedLanguages.some(lang => 
+    pathname.startsWith(`/${lang}/`) || pathname === `/${lang}`
+  )
+
+  if (hasLanguagePrefix) {
+    // Extract language and remaining path
+    const [, lang, ...rest] = pathname.split('/')
+    const remainingPath = rest.join('/')
+    
+    // For internal routing, we need to add the site slug
+    const internalPath = `/${siteSlug}/${lang}${remainingPath ? `/${remainingPath}` : ''}`
+    console.log('[middleware] Domain-based routing - internal rewrite to:', internalPath)
+    
+    const newUrl = request.nextUrl.clone()
+    newUrl.pathname = internalPath
+    return NextResponse.rewrite(newUrl)
+  }
+
+  // If no language prefix, redirect to default language
+  const newUrl = new URL(`/${defaultLanguage}${pathname === '/' ? '' : pathname}`, request.url)
+  console.log('[middleware] Domain-based routing - redirect to default language:', newUrl.pathname)
+  return NextResponse.redirect(newUrl)
+}
+
 export const config = {
   matcher: [
-    // Skip all internal paths (_next)
     '/((?!_next|api|favicon.ico).*)',
   ],
 }

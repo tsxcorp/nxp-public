@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import i18nConfig from '@/i18n/i18nConfig'
 import { usePathname, useRouter } from '@/lib/navigation'
 import { useTransition, useState, useRef, useEffect } from 'react'
+import { getRoutingContext, buildUrl } from '@/lib/utils/routing'
 
 type Locale = { code: string; name: string; direction?: string; flag?: string };
 type LocaleSwitcherProps = {
@@ -99,14 +100,10 @@ export default function LocaleSwitcher({ locales = [], site, translations = [], 
       permalink = '';
     }
 
-    // Check if we're using domain-based routing
-    const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-    const isDomainBased = hostname && !['localhost', '127.0.0.1'].includes(hostname);
+    // Build URL using utility function
+    const newUrl = buildUrl(langItem, permalink);
 
-    // If using domain-based routing, don't include site in URL
-    const newUrl = isDomainBased
-      ? `/${langItem}${permalink.startsWith('/') ? permalink : permalink ? '/' + permalink : ''}`
-      : `/${site}/${langItem}${permalink.startsWith('/') ? permalink : permalink ? '/' + permalink : ''}`;
+    console.log('[LocaleSwitcher] Switching to:', newUrl);
 
     startTransition(() => {
       router.push(newUrl);

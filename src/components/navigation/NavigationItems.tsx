@@ -3,6 +3,7 @@ import type { NavigationItem } from '@/directus/types'
 import { Link, usePathname } from '@/lib/navigation'
 import VIcon from '@/components/base/VIcon'
 import { convertIconName } from '@/lib/utils/strings'
+import { getRoutingContext, getCurrentLanguage, buildUrl } from '@/lib/utils/routing'
 
 interface PageType {
   id: string
@@ -22,27 +23,27 @@ interface ExtendedNavigationItem extends NavigationItem {
 }
 
 function getUrl(item: ExtendedNavigationItem, currentLang: string) {
+  let permalink = ''
+  
   if (item.type === 'page' && typeof item.page !== 'string') {
     // Find translation for current language
     const translation = item.page?.translations?.find(t => 
       t.languages_code.startsWith(currentLang)
-    );
+    )
     
     // Use current language translation if available, otherwise fallback to first translation
-    const permalink = translation?.permalink || item.page?.translations[0]?.permalink || '';
-    
-    // Always use /{lang}/{permalink} format
-    return `/${currentLang}/${permalink}`;
+    permalink = translation?.permalink || item.page?.translations[0]?.permalink || ''
   } else {
-    // For external URLs, return as is
+    // For internal URLs, get the clean URL
     if (item.url?.startsWith('http')) {
-      return item.url;
+      return item.url // External URL, return as is
     }
     
-    // For internal URLs, always use /{lang}/{url} format
-    const cleanUrl = item.url?.startsWith('/') ? item.url.slice(1) : item.url || '';
-    return `/${currentLang}/${cleanUrl}`;
+    permalink = item.url?.startsWith('/') ? item.url.slice(1) : item.url || ''
   }
+  
+  // Build URL using utility function
+  return buildUrl(currentLang, permalink)
 }
 
 function NavigationChildrenItems({
@@ -150,22 +151,8 @@ function NavigationItemsContent({
   className?: string
   tabIndex?: number
 }) {
-  const pathname = usePathname();
-  const pathSegments = pathname.split('/').filter(Boolean);
-  
-  // For domain-based routing, language is the first segment
-  // For slug-based routing, language is the second segment after site slug
-  let currentLang = 'en'; // default fallback
-  
-  if (pathSegments.length > 0) {
-    // Check if first segment is a language
-    if (['en', 'vi'].includes(pathSegments[0])) {
-      currentLang = pathSegments[0];
-    } else if (pathSegments.length > 1 && ['en', 'vi'].includes(pathSegments[1])) {
-      // For slug-based routing, language is second segment
-      currentLang = pathSegments[1];
-    }
-  }
+  const pathname = usePathname()
+  const currentLang = getCurrentLanguage(pathname)
 
   const handleClick = () => {
     const elem = document.activeElement
