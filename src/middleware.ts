@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getSiteByDomain } from './directus/queries/sites'
-import { getDefaultRedirectUrl } from './lib/utils/routing'
 
 // List of all supported languages
 const supportedLanguages = ['en', 'vi']
@@ -26,7 +25,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
     pathname === '/favicon.ico' ||
-    pathname.startsWith('/test-routing') // <-- skip test page
+    pathname.startsWith('/test-routing')
   ) {
     return NextResponse.next()
   }
@@ -34,13 +33,13 @@ export async function middleware(request: NextRequest) {
   // Check if this is a development domain (localhost, etc.)
   if (devDomains.some(domain => hostname?.includes(domain))) {
     console.log('[middleware] Development domain - using slug-based routing')
-    return handleSlugBasedRouting(request, pathname, hostname)
+    return handleSlugBasedRouting(request, pathname)
   }
 
   // Check if this is a production domain with mapping
   const siteSlug = productionDomains[hostname as keyof typeof productionDomains]
   if (siteSlug) {
-    console.log('[middleware] Production domain with mapping - using domain-based routing')
+    console.log('[middleware] Production domain detected - using domain-based routing')
     return handleDomainBasedRouting(request, pathname, siteSlug)
   }
 
@@ -57,10 +56,10 @@ export async function middleware(request: NextRequest) {
 
   // Fallback to slug-based routing
   console.log('[middleware] Fallback to slug-based routing')
-  return handleSlugBasedRouting(request, pathname, hostname)
+  return handleSlugBasedRouting(request, pathname)
 }
 
-function handleSlugBasedRouting(request: NextRequest, pathname: string, hostname: string) {
+function handleSlugBasedRouting(request: NextRequest, pathname: string) {
   // Pattern: /[site]/[lang] or /[site]/[lang]/...
   const slugBasedPattern = /^\/([a-zA-Z0-9_-]+)\/([a-zA-Z-]{2,5})(\/.*)?$/
   
@@ -84,10 +83,9 @@ function handleSlugBasedRouting(request: NextRequest, pathname: string, hostname
     return NextResponse.redirect(newUrl)
   }
 
-  // If root path or any other path, redirect to default site (without language)
-  const defaultRedirectPath = getDefaultRedirectUrl(hostname)
-  const newUrl = new URL(defaultRedirectPath, request.url)
-  console.log('[middleware] Redirecting to default site:', newUrl.pathname)
+  // If root path or any other path, redirect to default site homepage
+  const newUrl = new URL('/nexpo', request.url)
+  console.log('[middleware] Redirecting to default site homepage:', newUrl.pathname)
   return NextResponse.redirect(newUrl)
 }
 
@@ -103,6 +101,7 @@ function handleDomainBasedRouting(request: NextRequest, pathname: string, siteSl
     const remainingPath = rest.join('/')
     
     // For internal routing, we need to add the site slug
+    // This is the key: domain is just an alias for the site slug
     const internalPath = `/${siteSlug}/${lang}${remainingPath ? `/${remainingPath}` : ''}`
     console.log('[middleware] Domain-based routing - internal rewrite to:', internalPath)
     

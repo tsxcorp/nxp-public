@@ -46,6 +46,7 @@ export function buildUrl(lang: string, permalink: string, hostnameOverride?: str
   
   if (isDomainBased) {
     // Domain-based routing: /{lang}/{permalink}
+    // Domain is just an alias for the site slug
     return `/${lang}/${permalink}`
   } else {
     // Slug-based routing: /{site}/{lang}/{permalink}
