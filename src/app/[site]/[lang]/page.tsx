@@ -67,7 +67,7 @@ export default async function Page({ params, searchParams }: PageProps) {
     // If no page found, return 404
     return (
       <>
-        <TheHeader navigation={mainNav} lang={lang} site={siteData} />
+        <TheHeader navigation={mainNav} lang={lang} site={siteData?.slug || site} siteData={siteData} translations={[]} />
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
           <div className="max-w-2xl mx-auto px-4 py-12">
             <h1 className="text-3xl font-bold mb-4">404 - Page Not Found</h1>
@@ -94,7 +94,7 @@ export default async function Page({ params, searchParams }: PageProps) {
 
   return (
     <>
-      <TheHeader navigation={mainNav} lang={lang} site={siteData} />
+      <TheHeader navigation={mainNav} lang={lang} site={siteData?.slug || site} siteData={siteData} translations={pageContent?.translations || []} />
       <div className="min-h-screen w-full bg-gray-50 py-12">
         <div className="w-full px-4 md:px-8 lg:px-16">
           <PageBuilder blocks={Array.isArray(pageContent.blocks) ? pageContent.blocks : []} lang={lang} />

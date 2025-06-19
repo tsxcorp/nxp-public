@@ -2,25 +2,20 @@
 
 import React, { createContext, useContext } from 'react';
 
-interface Theme {
-  primary?: string;
-  gray?: string;
-  borderRadius?: string;
-  fonts?: {
-    families?: {
-      display?: string;
-      body?: string;
-      code?: string;
-    };
-  };
-}
-
 interface ThemeContextType {
-  theme: Theme;
+  theme: any;
   globals: any;
 }
 
-const ThemeContext = createContext<ThemeContextType | null>(null);
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+export function ThemeProvider({ theme, globals, children }: { theme: any, globals: any, children: React.ReactNode }) {
+  return (
+    <ThemeContext.Provider value={{ theme, globals }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
 
 export function useTheme() {
   const context = useContext(ThemeContext);
@@ -28,18 +23,4 @@ export function useTheme() {
     throw new Error('useTheme must be used within a ThemeProvider');
   }
   return context;
-}
-
-interface ThemeProviderProps {
-  children: React.ReactNode;
-  theme: Theme;
-  globals: any;
-}
-
-export function ThemeProvider({ children, theme, globals }: ThemeProviderProps) {
-  return (
-    <ThemeContext.Provider value={{ theme, globals }}>
-      {children}
-    </ThemeContext.Provider>
-  );
 } 

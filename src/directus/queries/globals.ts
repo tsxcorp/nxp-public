@@ -33,14 +33,21 @@ const getMockGlobals = (): Globals => ({
   ]
 })
 
-export const fetchGlobals = async (): Promise<Globals | null> => {
+export const fetchGlobals = async (siteId?: string): Promise<Globals | null> => {
   console.log('\n=== Fetch Globals ===')
+  console.log('Site ID:', siteId)
 
   return await safeApiCall(async () => {
+    const filters: any = {};
+    if (siteId) {
+      filters.site_id = { _eq: siteId };
+    }
+
     const globals = await directus.request(
       withRevalidate(
         readItems('globals' as any, {
           fields: ['*'],
+          filter: filters,
           limit: 1
         }),
         60
@@ -54,6 +61,7 @@ export const fetchGlobals = async (): Promise<Globals | null> => {
 
     console.log('✅ Globals found:', {
       id: globals[0].id,
+      site_id: globals[0].site_id,
       translations: globals[0].translations?.length || 0
     })
 

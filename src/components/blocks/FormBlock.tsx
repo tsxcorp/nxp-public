@@ -128,14 +128,14 @@ const FormBlock = ({ data, lang }: FormBlockComponentProps) => {
 
   return (
     <BlockContainer>
-      <div className='card mx-auto mt-4 max-w-4xl bg-[var(--color-primary)]'>
+      <div className='card mx-auto mt-4 max-w-4xl'>
         <div className='card-body'>
           {title && (
-            <TypographyTitle className='text-white'>{title}</TypographyTitle>
+            <TypographyTitle className='text-[var(--color-gray)] '>{title}</TypographyTitle>
           )}
           {headline && (
             <TypographyHeadline
-              className='text-white font-[var(--font-display)] font-semibold'
+              className="text-[var(--color-primary)] font-semibold [font-family:var(--font-display)]"
               content={headline}
             />
           )}

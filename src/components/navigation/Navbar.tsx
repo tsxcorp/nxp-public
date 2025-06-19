@@ -34,6 +34,9 @@ type NavBarProps = {
   title: string
   navigation: Navigation
   locale: string
+  site?: any
+  siteData?: any
+  translations?: any
 }
 
 export default async function Navbar({
@@ -41,6 +44,9 @@ export default async function Navbar({
   title,
   navigation,
   locale: lang,
+  site,
+  siteData,
+  translations,
 }: NavBarProps) {
   const { t } = await getTranslations({ locale: lang })
 
@@ -77,7 +83,12 @@ export default async function Navbar({
 
         <div className='navbar-end'>
           <ThemeSwitcher title={t('global.theme')} />
-          <LocaleSwitcher></LocaleSwitcher>
+          <LocaleSwitcher
+            locales={Array.isArray(siteData?.languages) ? siteData.languages : []}
+            site={site?.slug || site?.toString() || siteData?.slug || ''}
+            translations={translations || []}
+            currentLang={lang}
+          />
           {buttons && (
             <div className='dropdown dropdown-end'>
               <label tabIndex={0} className='btn btn-circle btn-ghost'>

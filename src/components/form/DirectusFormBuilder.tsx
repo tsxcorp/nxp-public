@@ -132,7 +132,7 @@ export default function DirectusFormBuilder({ element, hookForm }: DirectusFormB
                   }
                 })}
               />
-              <span className="text-[var(--color-text)]">{option.label}</span>
+              <span className="text-gray-800">{option.label}</span>
             </label>
           ))}
         </div>

@@ -1,11 +1,45 @@
 import React from 'react';
 import { fetchGlobals } from '@/directus/queries/globals';
+import { getSite } from '@/directus/queries/sites';
 import '@/app/globals.css';
+import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { ClientThemeWrapper } from '@/components/providers/ClientThemeWrapper';
 import { FontVariablesSetter } from '@/components/providers/FontVariablesSetter';
+import { FaviconProvider } from '@/components/providers/FaviconProvider';
+import { Metadata } from 'next';
 
 const tailwindColors = { violet: '#8b5cf6', slate: '#64748b' };
 const tailwindRadius = { xl: '1rem', lg: '0.5rem' };
+
+// Generate metadata for the site
+export async function generateMetadata({ params }: { params: Promise<{ site: string }> | { site: string } }): Promise<Metadata> {
+  const resolvedParams = await Promise.resolve(params);
+  const siteSlug = resolvedParams.site;
+  
+  try {
+    const siteData = await getSite(siteSlug);
+    const globals = await fetchGlobals(siteData?.id);
+    
+    const defaultTranslation = globals?.translations?.[0];
+    
+    return {
+      title: {
+        default: defaultTranslation?.title || siteData?.name || 'Site',
+        template: `%s | ${defaultTranslation?.title || siteData?.name || 'Site'}`
+      },
+      description: defaultTranslation?.description || 'Site description',
+      icons: {
+        icon: siteData?.favicon ? `/api/assets/${siteData.favicon}` : '/favicon.ico',
+      },
+    };
+  } catch (error) {
+    console.error('Error generating metadata:', error);
+    return {
+      title: 'Site',
+      description: 'Site description',
+    };
+  }
+}
 
 // Create a theme context
 
@@ -19,10 +53,15 @@ export default async function SiteLayout(props: { children: React.ReactNode, par
   const siteSlug = params.site;
   const lang = params.lang;
 
+  // Fetch site data to get siteId and favicon
+  process.stdout.write(`[${timestamp}] 📥 SITE_LAYOUT: Fetching site data...\n`);
+  const siteData = await getSite(siteSlug);
+  process.stdout.write(`[${timestamp}] 📦 SITE_LAYOUT: Received site data: ${siteData ? 'yes' : 'no'}\n`);
+
   // Fetch globals for this site
   process.stdout.write(`[${timestamp}] 📥 SITE_LAYOUT: Fetching globals...\n`);
-  const globals = await fetchGlobals();
-  const theme = globals?.translations?.[0]?.theme || {};
+  const globals = await fetchGlobals(siteData?.id);
+  const theme = (globals as any)?.theme || globals?.translations?.[0]?.theme || {};
   process.stdout.write(`[${timestamp}] 📦 SITE_LAYOUT: Received globals: ${globals ? 'yes' : 'no'}\n`);
   
   // const theme = globals?.theme || {};
@@ -46,13 +85,14 @@ export default async function SiteLayout(props: { children: React.ReactNode, par
   };
 
   return (
-    <>
+    <ThemeProvider theme={theme} globals={globals}>
+      <FaviconProvider siteData={siteData} />
       <FontVariablesSetter fontVars={fontVars} />
       <div style={styleVars as React.CSSProperties}>
         <ClientThemeWrapper theme={theme} globals={globals} styleVars={styleVars}>
           {children}
         </ClientThemeWrapper>
       </div>
-    </>
+    </ThemeProvider>
   );
 } 

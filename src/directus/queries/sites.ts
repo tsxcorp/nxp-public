@@ -25,7 +25,10 @@ export const getSite = async (siteSlug: string): Promise<Sites | null> => {
               _eq: siteSlug
             }
           },
-          fields: ['*'],
+          fields: [
+            '*',
+            'languages.*',
+          ],
           limit: 1
         }),
         60

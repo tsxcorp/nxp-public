@@ -96,6 +96,7 @@ const blockItemFields = [
   { gallery_items: galleryItemFields },
   { block_form: blockFormFields },
   { block_team: blockTeamFields },
+  { video: ['*', { translations: ['*'] }] },
 ];
 
 const langMap = { 'vi': 'vi-VN', 'en': 'en-US' } as const;
@@ -123,7 +124,6 @@ export const fetchPage = async (siteSlug: string, lang: string, permalink: strin
           ],
           deep: {
             // TypeScript is too strict for Directus _filter syntax, so we cast as any for these nested filters
-            translations: { _filter: { languages_code: { _eq: langCode } } } as any,
             blocks: {
               item: {
                 translations: { _filter: { languages_code: { _eq: langCode } } } as any,

@@ -103,7 +103,10 @@ function VForm(props: FormProps) {
   }
 
   return (
-    <div className={props.className}>
+    <div className={cn(
+      props.className,
+      'max-w-4xl mx-auto bg-white border-2 border-[var(--color-primary)] rounded-[12px] shadow-md p-8'
+    )}>
       <div className='mb-4'>
         {error && <VAlert type='error'>{(error as any)?.message || String(error)}</VAlert>}
         {form.on_success === 'message' && success && (
@@ -117,10 +120,7 @@ function VForm(props: FormProps) {
       </div>
 
       {!success && (
-        <form
-          className={formTheme.formClass}
-          onSubmit={hookForm.handleSubmit(submitForm)}
-        >
+        <form className={formTheme.formClass} onSubmit={hookForm.handleSubmit(submitForm)}>
           <div className='grid gap-6 md:grid-cols-6'>
             {schema.map((element) => {
               console.log('VForm - Rendering schema element:', element);
@@ -130,7 +130,7 @@ function VForm(props: FormProps) {
                   className={cn(element.outerclass, 'w-full')}
                 >
                   <label className='label' htmlFor={element.name}>
-                    <span className='label-text text-white'>{element.label}</span>
+                    <span className='label-text text-gray-900'>{element.label}</span>
                   </label>
                   <DirectusFormBuilder element={element} hookForm={hookForm} />
                   <ErrorMessage
