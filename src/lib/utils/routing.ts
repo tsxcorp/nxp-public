@@ -44,13 +44,19 @@ export function getCurrentLanguage(pathname: string): string {
 export function buildUrl(lang: string, permalink: string, hostnameOverride?: string): string {
   const { isDomainBased, siteSlug } = getRoutingContext(hostnameOverride)
   
+  console.log('[buildUrl] Debug:', { lang, permalink, hostnameOverride, isDomainBased, siteSlug })
+  
   if (isDomainBased) {
     // Domain-based routing: /{lang}/{permalink}
     // Domain is just an alias for the site slug
-    return `/${lang}/${permalink}`
+    const url = `/${lang}/${permalink}`
+    console.log('[buildUrl] Domain-based URL:', url)
+    return url
   } else {
     // Slug-based routing: /{site}/{lang}/{permalink}
-    return `/${siteSlug}/${lang}/${permalink}`
+    const url = `/${siteSlug}/${lang}/${permalink}`
+    console.log('[buildUrl] Slug-based URL:', url)
+    return url
   }
 }
 

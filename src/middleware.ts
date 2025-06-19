@@ -100,6 +100,13 @@ function handleDomainBasedRouting(request: NextRequest, pathname: string, siteSl
     const [, lang, ...rest] = pathname.split('/')
     const remainingPath = rest.join('/')
     
+    // Check if the remaining path already contains the site slug to prevent duplication
+    if (remainingPath.startsWith(`${siteSlug}/`)) {
+      // Path already contains site slug, just pass through
+      console.log('[middleware] Path already contains site slug, passing through')
+      return NextResponse.next()
+    }
+    
     // For internal routing, we need to add the site slug
     // This is the key: domain is just an alias for the site slug
     const internalPath = `/${siteSlug}/${lang}${remainingPath ? `/${remainingPath}` : ''}`
