@@ -16,18 +16,32 @@ function getUrl(item: ExtendedNavigationItem) {
   // Check if we're using domain-based routing
   const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
   const isDomainBased = hostname && !['localhost', '127.0.0.1'].includes(hostname);
+  
+  // Get current language from pathname
   const currentLang = typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : 'en';
 
   if (item.type === 'page' && typeof item.page !== 'string') {
-    const permalink = item.page?.translations[0]?.permalink || '';
-    return isDomainBased
-      ? `/${currentLang}${permalink ? `/${permalink}` : ''}`
-      : `/${item.page?.translations[0]?.permalink}`;
+    // Find translation for current language
+    const translation = item.page?.translations?.find(t => 
+      t.languages_code.startsWith(currentLang)
+    );
+    
+    // Use current language translation if available, otherwise fallback to first translation
+    const permalink = translation?.permalink || item.page?.translations[0]?.permalink || '';
+
+    // For domain-based routing, just use /{lang}/{permalink}
+    if (isDomainBased) {
+      return `/${currentLang}${permalink ? `/${permalink}` : ''}`;
+    }
+    
+    // For localhost, use full path with site slug
+    return `/${item.page?.translations[0]?.permalink}`;
   } else {
     // For external URLs, return as is
     if (item.url?.startsWith('http')) {
       return item.url;
     }
+    
     // For internal URLs, handle domain-based routing
     return isDomainBased
       ? `/${currentLang}${item.url?.startsWith('/') ? item.url : `/${item.url || ''}`}`
