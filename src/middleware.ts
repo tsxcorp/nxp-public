@@ -124,9 +124,18 @@ function handleDomainBasedRouting(request: NextRequest, pathname: string, siteSl
     const [, lang, ...rest] = pathname.split('/')
     const remainingPath = rest.join('/')
     
-    // Rewrite URL to include site slug for internal routing
+    // Check if the path already contains the site slug
+    const hasSiteSlug = remainingPath.startsWith(`${siteSlug}/`)
+    
+    // Rewrite URL to include site slug for internal routing, but avoid duplicate site slug
     const newUrl = request.nextUrl.clone()
-    newUrl.pathname = `/${siteSlug}/${lang}${remainingPath ? `/${remainingPath}` : ''}`
+    if (hasSiteSlug) {
+      // If path already has site slug, use as is
+      newUrl.pathname = pathname
+    } else {
+      // Add site slug for internal routing
+      newUrl.pathname = `/${siteSlug}/${lang}${remainingPath ? `/${remainingPath}` : ''}`
+    }
     console.log('[middleware] Rewriting URL to:', newUrl.pathname)
     return NextResponse.rewrite(newUrl)
   }
