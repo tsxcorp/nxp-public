@@ -20,13 +20,14 @@ export async function middleware(request: NextRequest) {
   const { pathname, hostname } = request.nextUrl
   console.log('[middleware] Processing:', { pathname, hostname })
 
-  // Skip internal paths or special routes
+  // Skip internal paths or special routes - MUST BE FIRST
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
     pathname === '/favicon.ico' ||
     pathname.startsWith('/test-routing')
   ) {
+    console.log('[middleware] Skipping internal/special route:', pathname)
     return NextResponse.next()
   }
 

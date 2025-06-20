@@ -1,5 +1,21 @@
 // Helper function to determine routing context
-export function getRoutingContext(hostnameOverride?: string) {
+export function getRoutingContext(hostnameOverride?: string, currentPathname?: string) {
+  // If we have a currentPathname, use it to determine routing context
+  if (currentPathname) {
+    const pathSegments = currentPathname.split('/').filter(Boolean)
+    
+    // If the pathname starts with a site slug (not a language), it's slug-based routing
+    if (pathSegments.length > 0 && !['en', 'vi'].includes(pathSegments[0])) {
+      return { isDomainBased: false, siteSlug: pathSegments[0] }
+    }
+    
+    // If the pathname starts with a language, it's domain-based routing
+    if (pathSegments.length > 0 && ['en', 'vi'].includes(pathSegments[0])) {
+      return { isDomainBased: true, siteSlug: null }
+    }
+  }
+  
+  // Fallback to hostname-based logic only if no pathname is provided
   const hostname = hostnameOverride || (typeof window !== 'undefined' ? window.location.hostname : '')
   const isDevelopment = ['localhost', '127.0.0.1'].some(domain => hostname.includes(domain))
   
@@ -60,7 +76,7 @@ export function getSiteSlugFromPathname(pathname: string): string | null {
 
 // Helper function to build URL based on routing context
 export function buildUrl(lang: string, permalink: string, hostnameOverride?: string, currentPathname?: string): string {
-  const { isDomainBased, siteSlug } = getRoutingContext(hostnameOverride)
+  const { isDomainBased, siteSlug } = getRoutingContext(hostnameOverride, currentPathname)
   
   console.log('[buildUrl] Debug:', { lang, permalink, hostnameOverride, isDomainBased, siteSlug, currentPathname })
   
@@ -83,8 +99,8 @@ export function buildUrl(lang: string, permalink: string, hostnameOverride?: str
 }
 
 // Helper function to get default redirect URL based on routing context
-export function getDefaultRedirectUrl(hostnameOverride?: string): string {
-  const { isDomainBased, siteSlug } = getRoutingContext(hostnameOverride)
+export function getDefaultRedirectUrl(hostnameOverride?: string, currentPathname?: string): string {
+  const { isDomainBased, siteSlug } = getRoutingContext(hostnameOverride, currentPathname)
   
   if (isDomainBased) {
     // Domain-based routing: redirect to default language

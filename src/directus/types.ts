@@ -49,6 +49,11 @@ export interface Sites {
   domain?: string;
   status?: 'draft' | 'published';
   navigation?: string[];
+  languages?: Array<{
+    code: string;
+    name: string;
+    direction: string;
+  }>;
 }
 
 export interface Page {

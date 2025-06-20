@@ -17,6 +17,7 @@ export const getSite = async (siteSlug: string): Promise<Sites | null> => {
   console.log('Site slug:', siteSlug);
 
   return await safeApiCall(async () => {
+    // First, get the site
     const sites = await directus.request(
       withRevalidate(
         readItems('sites' as any, {
@@ -25,10 +26,7 @@ export const getSite = async (siteSlug: string): Promise<Sites | null> => {
               _eq: siteSlug
             }
           },
-          fields: [
-            '*',
-            'languages.*',
-          ],
+          fields: ['*'],
           limit: 1
         }),
         60
@@ -42,14 +40,57 @@ export const getSite = async (siteSlug: string): Promise<Sites | null> => {
       return null;
     }
 
+    // Then, get the languages for this site
+    const siteLanguages = await directus.request(
+      withRevalidate(
+        readItems('sites_languages' as any, {
+          filter: {
+            sites_id: {
+              _eq: sites[0].id
+            }
+          },
+          fields: ['languages_code']
+        }),
+        60
+      )
+    ) as any[];
+
+    console.log('Site languages response:', siteLanguages);
+
+    // Get the language codes
+    const languageCodes = siteLanguages.map(sl => sl.languages_code);
+
+    // Then, get the full language details
+    const languages = await directus.request(
+      withRevalidate(
+        readItems('languages' as any, {
+          filter: {
+            code: {
+              _in: languageCodes
+            }
+          },
+          fields: ['code', 'name', 'direction']
+        }),
+        60
+      )
+    ) as any[];
+
+    console.log('Languages response:', languages);
+
+    const siteWithLanguages: Sites = {
+      ...sites[0],
+      languages: languages || []
+    };
+
     console.log('✅ Site found:', {
-      id: sites[0].id,
-      name: sites[0].name,
-      navigation: sites[0].navigation,
-      status: sites[0].status
+      id: siteWithLanguages.id,
+      name: siteWithLanguages.name,
+      navigation: siteWithLanguages.navigation,
+      status: siteWithLanguages.status,
+      languages: siteWithLanguages.languages
     });
 
-    return sites[0];
+    return siteWithLanguages;
   }, getMockSite(siteSlug), `getSite(${siteSlug})`);
 };
 
@@ -58,6 +99,7 @@ export const getSiteByDomain = async (domain: string): Promise<Sites | null> => 
   console.log('Domain:', domain);
 
   return await safeApiCall(async () => {
+    // First, get the site
     const sites = await directus.request(
       withRevalidate(
         readItems('sites' as any, {
@@ -66,10 +108,7 @@ export const getSiteByDomain = async (domain: string): Promise<Sites | null> => 
               _eq: domain
             }
           },
-          fields: [
-            '*',
-            'languages.*',
-          ],
+          fields: ['*'],
           limit: 1
         }),
         60
@@ -83,13 +122,56 @@ export const getSiteByDomain = async (domain: string): Promise<Sites | null> => 
       return null;
     }
 
+    // Then, get the languages for this site
+    const siteLanguages = await directus.request(
+      withRevalidate(
+        readItems('sites_languages' as any, {
+          filter: {
+            sites_id: {
+              _eq: sites[0].id
+            }
+          },
+          fields: ['languages_code']
+        }),
+        60
+      )
+    ) as any[];
+
+    console.log('Site languages response:', siteLanguages);
+
+    // Get the language codes
+    const languageCodes = siteLanguages.map(sl => sl.languages_code);
+
+    // Then, get the full language details
+    const languages = await directus.request(
+      withRevalidate(
+        readItems('languages' as any, {
+          filter: {
+            code: {
+              _in: languageCodes
+            }
+          },
+          fields: ['code', 'name', 'direction']
+        }),
+        60
+      )
+    ) as any[];
+
+    console.log('Languages response:', languages);
+
+    const siteWithLanguages: Sites = {
+      ...sites[0],
+      languages: languages || []
+    };
+
     console.log('✅ Site found:', {
-      id: sites[0].id,
-      name: sites[0].name,
-      navigation: sites[0].navigation,
-      status: sites[0].status
+      id: siteWithLanguages.id,
+      name: siteWithLanguages.name,
+      navigation: siteWithLanguages.navigation,
+      status: siteWithLanguages.status,
+      languages: siteWithLanguages.languages
     });
 
-    return sites[0];
+    return siteWithLanguages;
   }, null, `getSiteByDomain(${domain})`);
 }; 

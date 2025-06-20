@@ -115,7 +115,11 @@ function TheHeaderContent({ navigation, lang, site, siteData, translations, path
         </nav>
         <div className="flex items-center gap-4">
           <LocaleSwitcher
-            locales={Array.isArray(siteData?.languages) ? siteData.languages : []}
+            locales={Array.isArray(siteData?.languages) ? siteData.languages.map((lang: any) => ({
+              code: lang.code,
+              name: lang.name,
+              direction: lang.direction
+            })) : []}
             site={siteSlug}
             translations={translations || []}
             currentLang={lang}
@@ -127,8 +131,10 @@ function TheHeaderContent({ navigation, lang, site, siteData, translations, path
 }
 
 // Client component wrapper
-export default function TheHeader({ navigation, lang, site, siteData, translations }: Omit<TheHeaderProps, 'pathname'>) {
-  const pathname = usePathname();
+export default function TheHeader({ navigation, lang, site, siteData, translations, pathname }: TheHeaderProps) {
+  // If pathname is provided, use it; otherwise fall back to usePathname hook
+  const clientPathname = usePathname();
+  const finalPathname = pathname || clientPathname;
   
-  return <TheHeaderContent navigation={navigation} lang={lang} site={site} siteData={siteData} translations={translations} pathname={pathname} />;
+  return <TheHeaderContent navigation={navigation} lang={lang} site={site} siteData={siteData} translations={translations} pathname={finalPathname} />;
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigation, NavigationItem } from '@/directus/types';
 import Link from 'next/link';
 import { buildUrl, getCurrentLanguage } from '@/lib/utils/routing';
@@ -45,6 +45,12 @@ function getNavigationUrl(item: NavigationItem, currentLang: string, currentPath
 
 function TheFooterContent({ navigation, lang, pathname = '/' }: TheFooterProps) {
   const currentLang = getCurrentLanguage(pathname);
+  const [currentYear, setCurrentYear] = useState<string>('');
+  
+  // Set the year on the client side to avoid hydration mismatch
+  useEffect(() => {
+    setCurrentYear(new Date().getFullYear().toString());
+  }, []);
   
   if (!navigation || !Array.isArray(navigation.items)) return null;
 
@@ -69,7 +75,7 @@ function TheFooterContent({ navigation, lang, pathname = '/' }: TheFooterProps) 
           </ul>
         </nav>
         <div className="text-gray-400 text-sm">
-          © {new Date().getFullYear()} Your Company. All rights reserved.
+          © {currentYear} Your Company. All rights reserved.
         </div>
       </div>
     </footer>
@@ -77,8 +83,10 @@ function TheFooterContent({ navigation, lang, pathname = '/' }: TheFooterProps) 
 }
 
 // Client component wrapper
-export default function TheFooter({ navigation, lang }: Omit<TheFooterProps, 'pathname'>) {
-  const pathname = usePathname();
+export default function TheFooter({ navigation, lang, pathname }: TheFooterProps) {
+  // If pathname is provided, use it; otherwise fall back to usePathname hook
+  const clientPathname = usePathname();
+  const finalPathname = pathname || clientPathname;
   
-  return <TheFooterContent navigation={navigation} lang={lang} pathname={pathname} />;
+  return <TheFooterContent navigation={navigation} lang={lang} pathname={finalPathname} />;
 }

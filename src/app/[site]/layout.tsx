@@ -22,6 +22,12 @@ export async function generateMetadata({ params }: { params: Promise<{ site: str
     
     const defaultTranslation = globals?.translations?.[0];
     
+    // Use Directus URL directly for favicon instead of /api/assets/
+    const directusUrl = process.env.NEXT_PUBLIC_DIRECTUS_URL;
+    const faviconUrl = siteData?.favicon && directusUrl 
+      ? `${directusUrl}/assets/${siteData.favicon}` 
+      : '/favicon.ico';
+    
     return {
       title: {
         default: defaultTranslation?.title || siteData?.name || 'Site',
@@ -29,7 +35,7 @@ export async function generateMetadata({ params }: { params: Promise<{ site: str
       },
       description: defaultTranslation?.description || 'Site description',
       icons: {
-        icon: siteData?.favicon ? `/api/assets/${siteData.favicon}` : '/favicon.ico',
+        icon: faviconUrl,
       },
     };
   } catch (error) {
@@ -43,15 +49,14 @@ export async function generateMetadata({ params }: { params: Promise<{ site: str
 
 // Create a theme context
 
-export default async function SiteLayout(props: { children: React.ReactNode, params: { site: string, lang: string } }) {
+export default async function SiteLayout(props: { children: React.ReactNode, params: Promise<{ site: string }> }) {
   const { children } = props;
-  const params = typeof (props.params as any)?.then === 'function' ? await (props.params as any) : props.params;
+  const params = await props.params;
 
   const timestamp = new Date().toISOString();
-  process.stdout.write(`\n[${timestamp}] 🏗️ SITE_LAYOUT: Starting layout render for site: ${params.site} lang: ${params.lang}\n`);
+  process.stdout.write(`\n[${timestamp}] 🏗️ SITE_LAYOUT: Starting layout render for site: ${params.site}\n`);
   
   const siteSlug = params.site;
-  const lang = params.lang;
 
   // Fetch site data to get siteId and favicon
   process.stdout.write(`[${timestamp}] 📥 SITE_LAYOUT: Fetching site data...\n`);

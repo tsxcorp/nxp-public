@@ -94,11 +94,10 @@ export default function LocaleSwitcher({ locales = [], site, translations = [], 
       return translationCode === targetCode;
     });
     console.log('matched translation:', translation);
-    let permalink = translation?.permalink || '';
-    // Nếu không có translation hoặc permalink rỗng hoặc '/', về homepage
-    if (!translation || !permalink || permalink === '/') {
-      permalink = '';
-    }
+    
+    // Khi chuyển đổi ngôn ngữ, luôn sử dụng permalink rỗng để về homepage của ngôn ngữ đó
+    // Không sử dụng permalink từ translation vì có thể gây ra URL sai
+    const permalink = '';
 
     // Build URL using utility function with current pathname
     const newUrl = buildUrl(langItem, permalink, undefined, currentPathname);

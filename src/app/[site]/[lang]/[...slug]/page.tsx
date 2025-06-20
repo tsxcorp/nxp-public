@@ -28,16 +28,17 @@ type BlockItem = {
 };
 
 export default async function SlugPage({ params, searchParams }: PageProps) {
-  const [resolvedParams, resolvedSearchParams] = await Promise.all([
-    params,
-    searchParams
-  ]);
+  const resolvedParams = await params;
   const { site, lang, slug } = resolvedParams;
+
+  // Construct the current pathname on the server side
+  const currentPathname = `/${site}/${lang}${slug && slug.length > 0 ? `/${slug.join('/')}` : ''}`;
 
   console.log('\n=== Page Component Debug ===');
   console.log('Site:', site);
   console.log('Language:', lang);
   console.log('Slug:', slug);
+  console.log('Current Pathname:', currentPathname);
 
   // Fetch site data to get siteId (if multi-tenant)
   const siteData = await getSite(site);
@@ -89,7 +90,7 @@ export default async function SlugPage({ params, searchParams }: PageProps) {
     // If no page found, return 404
     return (
       <>
-        <TheHeader navigation={mainNav} lang={lang} site={siteData?.slug || site} siteData={siteData} translations={[]} />
+        <TheHeader navigation={mainNav} lang={lang} site={siteData?.slug || site} siteData={siteData} translations={[]} pathname={currentPathname} />
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
           <div className="max-w-2xl mx-auto px-4 py-12">
             <h1 className="text-3xl font-bold mb-4">404 - Page Not Found</h1>
@@ -101,7 +102,7 @@ export default async function SlugPage({ params, searchParams }: PageProps) {
               <pre className="text-sm">
                 {JSON.stringify({
                   params: resolvedParams,
-                  searchParams: resolvedSearchParams,
+                  searchParams: await searchParams,
                   hasMainNav: !!mainNav,
                   hasFooterNav: !!footerNav
                 }, null, 2)}
@@ -109,20 +110,20 @@ export default async function SlugPage({ params, searchParams }: PageProps) {
             </div>
           </div>
         </div>
-        <TheFooter navigation={footerNav} lang={lang} />
+        <TheFooter navigation={footerNav} lang={lang} pathname={currentPathname} />
       </>
     );
   }
 
   return (
     <>
-      <TheHeader navigation={mainNav} lang={lang} site={siteData?.slug || site} siteData={siteData} translations={pageContent?.translations || []} />
+      <TheHeader navigation={mainNav} lang={lang} site={siteData?.slug || site} siteData={siteData} translations={pageContent?.translations || []} pathname={currentPathname} />
       <div className="min-h-screen w-full bg-gray-50 py-12">
         <div className="w-full px-4 md:px-8 lg:px-16">
           <PageBuilder blocks={Array.isArray(pageContent.blocks) ? pageContent.blocks : []} lang={lang} />
         </div>
       </div>
-      <TheFooter navigation={footerNav} lang={lang} />
+      <TheFooter navigation={footerNav} lang={lang} pathname={currentPathname} />
     </>
   );
 }

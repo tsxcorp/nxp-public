@@ -4,11 +4,14 @@ import { getTranslations } from '@/i18n/i18n'
 
 export default async function SiteLayout({
   children,
-  params: { lang },
+  params,
 }: {
   children: React.ReactNode
-  params: { lang: string }
+  params: Promise<{ lang: string }>
 }) {
+  const resolvedParams = await params;
+  const { lang } = resolvedParams;
+  
   // Initialize i18n instance
   await getTranslations({ locale: lang })
 
