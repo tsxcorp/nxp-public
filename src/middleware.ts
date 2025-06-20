@@ -32,8 +32,8 @@ export async function middleware(request: NextRequest) {
 
   // Check if this is a development domain (localhost, etc.)
   if (devDomains.some(domain => hostname?.includes(domain))) {
-    console.log('[middleware] Development domain - using domain-based routing with nexpo')
-    return handleDomainBasedRouting(request, pathname, 'nexpo')
+    console.log('[middleware] Development domain - using slug-based routing')
+    return handleSlugBasedRouting(request, pathname)
   }
 
   // Check if this is a production domain with mapping
@@ -69,6 +69,16 @@ function handleSlugBasedRouting(request: NextRequest, pathname: string) {
     return NextResponse.next()
   }
 
+  // Pattern: /[site] (just site slug without language)
+  const siteOnlyPattern = /^\/([a-zA-Z0-9_-]+)$/
+  if (siteOnlyPattern.test(pathname)) {
+    // Extract site slug and redirect to default language
+    const [, siteSlug] = pathname.split('/')
+    const newUrl = new URL(`/${siteSlug}/${defaultLanguage}`, request.url)
+    console.log('[middleware] Redirecting site slug to default language:', newUrl.pathname)
+    return NextResponse.redirect(newUrl)
+  }
+
   // If pathname has language prefix but no site slug, redirect to default site
   const hasLanguagePrefix = supportedLanguages.some(lang => 
     pathname.startsWith(`/${lang}/`) || pathname === `/${lang}`
@@ -79,19 +89,14 @@ function handleSlugBasedRouting(request: NextRequest, pathname: string) {
     const [, lang, ...rest] = pathname.split('/')
     const remainingPath = rest.join('/')
     
-    // Get the site slug from the first segment of the path or use a default
-    const pathSegments = pathname.split('/').filter(Boolean)
-    const defaultSiteSlug = pathSegments[0] || 'nexpo' // fallback to nexpo if no site slug found
-    
-    const newUrl = new URL(`/${defaultSiteSlug}/${lang}${remainingPath ? `/${remainingPath}` : ''}`, request.url)
+    const newUrl = new URL(`/nexpo/${lang}${remainingPath ? `/${remainingPath}` : ''}`, request.url)
     console.log('[middleware] Redirecting to default site:', newUrl.pathname)
     return NextResponse.redirect(newUrl)
   }
 
   // If root path or any other path, redirect to default site homepage
-  // For now, redirect to root and let the application handle site selection
-  const newUrl = new URL('/', request.url)
-  console.log('[middleware] Redirecting to root:', newUrl.pathname)
+  const newUrl = new URL(`/nexpo/${defaultLanguage}`, request.url)
+  console.log('[middleware] Redirecting to default site:', newUrl.pathname)
   return NextResponse.redirect(newUrl)
 }
 

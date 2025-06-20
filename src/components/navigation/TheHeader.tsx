@@ -75,11 +75,15 @@ function TheHeaderContent({ navigation, lang, site, siteData, translations, path
   // Lấy slug site nếu có
   const siteSlug = site?.slug || site?.toString() || siteData?.slug || '';
 
+  // Generate logo URL using buildUrl
+  const logoUrl = buildUrl(currentLang, '', undefined, pathname);
+  console.log('[TheHeader] Logo URL:', logoUrl);
+
   return (
     <header className="w-full bg-white shadow py-3">
       <div className="mx-auto flex items-center justify-between max-w-7xl px-4 md:px-8 lg:px-16">
         <div className="flex items-center gap-4">
-          <Link href={`/${siteSlug}/${lang}`} className="flex items-center gap-2">
+          <Link href={logoUrl} className="flex items-center gap-2">
             {siteData?.logo ? (
               <Image
                 src={siteData?.logo ? getDirectusMedia(siteData.logo) : '/logo.svg'}

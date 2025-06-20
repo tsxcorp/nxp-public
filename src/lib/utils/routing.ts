@@ -4,8 +4,9 @@ export function getRoutingContext(hostnameOverride?: string) {
   const isDevelopment = ['localhost', '127.0.0.1'].some(domain => hostname.includes(domain))
   
   if (isDevelopment) {
-    // For development, treat as domain-based routing with nexpo as default site
-    return { isDomainBased: true, siteSlug: 'nexpo' }
+    // For development, we need to extract site slug from pathname
+    // This should be handled by the application logic, not hardcoded
+    return { isDomainBased: false, siteSlug: null }
   }
   
   // Check if this is a production domain with mapping
