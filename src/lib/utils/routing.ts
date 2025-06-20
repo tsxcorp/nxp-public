@@ -4,18 +4,23 @@ export function getRoutingContext(hostnameOverride?: string, currentPathname?: s
   if (currentPathname) {
     const pathSegments = currentPathname.split('/').filter(Boolean)
     
-    // If the pathname starts with a site slug (not a language), it's slug-based routing
-    if (pathSegments.length > 0 && !['en', 'vi'].includes(pathSegments[0])) {
-      return { isDomainBased: false, siteSlug: pathSegments[0] }
-    }
-    
     // If the pathname starts with a language, it's domain-based routing
     if (pathSegments.length > 0 && ['en', 'vi'].includes(pathSegments[0])) {
       return { isDomainBased: true, siteSlug: null }
     }
+    
+    // If the pathname starts with a site slug (not a language), check if it's followed by a language
+    if (pathSegments.length > 0 && !['en', 'vi'].includes(pathSegments[0])) {
+      // If second segment is a language, this is slug-based routing
+      if (pathSegments.length > 1 && ['en', 'vi'].includes(pathSegments[1])) {
+        return { isDomainBased: false, siteSlug: pathSegments[0] }
+      }
+      // If no language in second segment, this might be domain-based routing with site slug added by middleware
+      // We need to check the hostname to determine the actual routing mode
+    }
   }
   
-  // Fallback to hostname-based logic only if no pathname is provided
+  // Fallback to hostname-based logic
   const hostname = hostnameOverride || (typeof window !== 'undefined' ? window.location.hostname : '')
   const isDevelopment = ['localhost', '127.0.0.1'].some(domain => hostname.includes(domain))
   
@@ -80,7 +85,17 @@ export function buildUrl(lang: string, permalink: string, hostnameOverride?: str
   
   console.log('[buildUrl] Debug:', { lang, permalink, hostnameOverride, isDomainBased, siteSlug, currentPathname })
   
-  if (isDomainBased) {
+  // Additional check for domain-based routing when pathname contains site slug
+  // This happens when middleware rewrites URLs for domain-based routing
+  const hostname = hostnameOverride || (typeof window !== 'undefined' ? window.location.hostname : '')
+  const productionDomains: Record<string, string> = {
+    'event.nexpo.vn': 'nexpo'
+  }
+  
+  const actualSiteSlug = productionDomains[hostname]
+  const isActuallyDomainBased = actualSiteSlug && hostname !== 'localhost' && !hostname.includes('127.0.0.1')
+  
+  if (isDomainBased || isActuallyDomainBased) {
     // Domain-based routing: /{lang}/{permalink}
     // Domain is just an alias for the site slug
     const cleanPermalink = permalink.startsWith('/') ? permalink.slice(1) : permalink
