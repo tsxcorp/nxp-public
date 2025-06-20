@@ -23,6 +23,8 @@ interface ExtendedNavigationItem extends NavigationItem {
 }
 
 function getUrl(item: ExtendedNavigationItem, currentLang: string, currentPathname: string) {
+  console.log('[getUrl] Called with:', { item, currentLang, currentPathname })
+  
   let permalink = ''
   
   if (item.type === 'page' && typeof item.page !== 'string') {
@@ -42,8 +44,12 @@ function getUrl(item: ExtendedNavigationItem, currentLang: string, currentPathna
     permalink = item.url?.startsWith('/') ? item.url.slice(1) : item.url || ''
   }
   
+  console.log('[getUrl] Permalink:', permalink)
+  
   // Build URL using utility function with current pathname
-  return buildUrl(currentLang, permalink, undefined, currentPathname)
+  const result = buildUrl(currentLang, permalink, undefined, currentPathname)
+  console.log('[getUrl] Result:', result)
+  return result
 }
 
 function NavigationChildrenItems({

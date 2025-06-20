@@ -116,21 +116,8 @@ export const fetchNavigationSafe = async function name(siteSlug: string, lang: s
           ) || item.translations[0]
         : undefined;
 
-      let href = '#';
-      if (item.type === 'url' && item.url) {
-        href = item.url;
-      } else if (item.type === 'page' && item.page) {
-        const pageTranslation = Array.isArray(item.page.translations) && item.page.translations.length > 0
-          ? item.page.translations.find(
-              (trans: { languages_code: string }) => trans.languages_code === directusLang
-            ) || item.page.translations[0]
-          : undefined;
-        href = pageTranslation ? `/${siteSlug}/${lang}${pageTranslation.permalink}` : href;
-      }
-
       return {
         ...item,
-        href,
         translations: matchingTranslation ? [matchingTranslation] : [],
       };
     });

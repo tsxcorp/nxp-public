@@ -1,13 +1,51 @@
+'use client';
+
 import React from 'react';
 import { Navigation, NavigationItem } from '@/directus/types';
 import Link from 'next/link';
+import { buildUrl, getCurrentLanguage } from '@/lib/utils/routing';
+import { usePathname } from '@/lib/navigation';
 
 interface TheFooterProps {
   navigation: Navigation | null;
   lang: string;
+  pathname?: string;
 }
 
-export default function TheFooter({ navigation, lang }: TheFooterProps) {
+// Helper function to generate URL for navigation items
+function getNavigationUrl(item: NavigationItem, currentLang: string, currentPathname: string) {
+  console.log('[getNavigationUrl] Called with:', { item, currentLang, currentPathname })
+  
+  let permalink = ''
+  
+  if (item.type === 'page' && typeof item.page !== 'string') {
+    // Find translation for current language
+    const translation = item.page?.translations?.find(t => 
+      t.languages_code.startsWith(currentLang)
+    )
+    
+    // Use current language translation if available, otherwise fallback to first translation
+    permalink = translation?.permalink || item.page?.translations[0]?.permalink || ''
+  } else {
+    // For internal URLs, get the clean URL
+    if (item.url?.startsWith('http')) {
+      return item.url // External URL, return as is
+    }
+    
+    permalink = item.url?.startsWith('/') ? item.url.slice(1) : item.url || ''
+  }
+  
+  console.log('[getNavigationUrl] Permalink:', permalink)
+  
+  // Build URL using utility function with current pathname
+  const result = buildUrl(currentLang, permalink, undefined, currentPathname)
+  console.log('[getNavigationUrl] Result:', result)
+  return result
+}
+
+function TheFooterContent({ navigation, lang, pathname = '/' }: TheFooterProps) {
+  const currentLang = getCurrentLanguage(pathname);
+  
   if (!navigation || !Array.isArray(navigation.items)) return null;
 
   return (
@@ -20,7 +58,7 @@ export default function TheFooter({ navigation, lang }: TheFooterProps) {
               return (
                 <li key={item.id}>
                   <Link
-                    href={item.href || '#'}
+                    href={getNavigationUrl(item, currentLang, pathname)}
                     className="text-gray-600 hover:text-gray-900 transition-colors"
                   >
                     {title}
@@ -36,4 +74,11 @@ export default function TheFooter({ navigation, lang }: TheFooterProps) {
       </div>
     </footer>
   );
+}
+
+// Client component wrapper
+export default function TheFooter({ navigation, lang }: Omit<TheFooterProps, 'pathname'>) {
+  const pathname = usePathname();
+  
+  return <TheFooterContent navigation={navigation} lang={lang} pathname={pathname} />;
 }

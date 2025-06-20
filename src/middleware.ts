@@ -32,8 +32,8 @@ export async function middleware(request: NextRequest) {
 
   // Check if this is a development domain (localhost, etc.)
   if (devDomains.some(domain => hostname?.includes(domain))) {
-    console.log('[middleware] Development domain - using slug-based routing')
-    return handleSlugBasedRouting(request, pathname)
+    console.log('[middleware] Development domain - using domain-based routing with nexpo')
+    return handleDomainBasedRouting(request, pathname, 'nexpo')
   }
 
   // Check if this is a production domain with mapping
