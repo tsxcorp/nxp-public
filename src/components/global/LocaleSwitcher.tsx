@@ -28,6 +28,26 @@ const flagMap: Record<string, string> = {
 };
 const getFlag = (code: string) => flagMap[code?.slice(0,2)] || '🌐';
 
+// Helper function to extract current path without language prefix
+function extractCurrentPath(pathname: string, currentLang: string): string {
+  const pathSegments = pathname.split('/').filter(Boolean);
+  
+  // For domain-based routing: /{lang}/{path}
+  // Remove the language segment (first segment)
+  if (pathSegments.length > 0 && pathSegments[0] === currentLang) {
+    return '/' + pathSegments.slice(1).join('/');
+  }
+  
+  // For slug-based routing: /{site}/{lang}/{path}
+  // Remove the language segment (second segment)
+  if (pathSegments.length > 1 && pathSegments[1] === currentLang) {
+    return '/' + pathSegments.slice(2).join('/');
+  }
+  
+  // If no language found in expected position, return the path as is
+  return pathname;
+}
+
 export default function LocaleSwitcher({ locales = [], site, translations = [], currentLang }: LocaleSwitcherProps) {
   const { i18n } = useTranslation();
   const [isPending, startTransition] = useTransition();
@@ -95,12 +115,12 @@ export default function LocaleSwitcher({ locales = [], site, translations = [], 
     });
     console.log('matched translation:', translation);
     
-    // Khi chuyển đổi ngôn ngữ, luôn sử dụng permalink rỗng để về homepage của ngôn ngữ đó
-    // Không sử dụng permalink từ translation vì có thể gây ra URL sai
-    const permalink = '';
+    // Extract current path without language prefix to preserve the current route
+    const currentPath = extractCurrentPath(currentPathname, currentLang);
+    console.log('[LocaleSwitcher] Current path extracted:', currentPath);
 
     // Build URL using utility function with current pathname
-    const newUrl = buildUrl(langItem, permalink, undefined, currentPathname);
+    const newUrl = buildUrl(langItem, currentPath, undefined, currentPathname);
 
     console.log('[LocaleSwitcher] Switching to:', newUrl);
 

@@ -3,8 +3,6 @@
 import { Forms, FormField } from '@/directus/types'
 import { useState } from 'react'
 import VAlert from '@/components/base/VAlert'
-import directusApi from '@/directus/client'
-import { createItem } from '@directus/sdk'
 import { useForm } from 'react-hook-form'
 import { ErrorMessage } from '@hookform/error-message'
 import DirectusFormBuilder from '@/components/form/DirectusFormBuilder'
@@ -83,14 +81,22 @@ function VForm(props: FormProps) {
         value
       }));
 
-      await directusApi.request(
-        createItem('form_submissions', {
-          
-            answers,
-          
+      const response = await fetch('/api/form-submissions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          answers,
           form: props.form.id,
-        })
-      )
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to submit form')
+      }
+
       setSuccess(true)
       if (form.on_success === 'redirect' && form.redirect_url) {
         return router.push(form.redirect_url)

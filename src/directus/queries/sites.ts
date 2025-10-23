@@ -9,7 +9,7 @@ const getMockSite = (siteSlug: string): Sites => ({
   status: 'published',
   slug: siteSlug,
   name: 'Mock Site',
-  navigation: ['1', '2']
+  navigation: ['header', 'footer']
 })
 
 export const getSite = async (siteSlug: string): Promise<Sites | null> => {

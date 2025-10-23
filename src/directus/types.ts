@@ -337,6 +337,20 @@ export interface HelpFeedback {
   visitor_id?: string
 }
 
+export interface FormSubmissions {
+  id: string
+  answers: Array<{
+    field: string
+    value: string
+  }>
+  form: string | Forms
+  date_created?: string
+  date_updated?: string
+  user_created?: string | DirectusUsers
+  user_updated?: string | DirectusUsers
+  status?: 'draft' | 'published' | 'archived'
+}
+
 export interface BlockColumns {
   headline?: string
   id: string

@@ -10,7 +10,8 @@ import type {
   HelpArticles,
   HelpCollections,
   HelpFeedback,
-  Categories
+  Categories,
+  FormSubmissions
 } from './types'
 
 export interface BaseItem {
@@ -99,7 +100,7 @@ export type Schema = {
   help_collections: HelpCollections
   help_feedback: HelpFeedback
   categories: Categories
-  form_submissions: any
+  form_submissions: FormSubmissions
   projects: any
 }
 
