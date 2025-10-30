@@ -94,6 +94,11 @@ const FormBlock = ({ data, lang }: FormBlockComponentProps) => {
   // Transform form.fields to schema expected by VForm
   const formWithSchema = {
     ...data.form,
+    // Ensure new form fields are included
+    is_allow_group: data.form.is_allow_group || false,
+    template_email: data.form.template_email,
+    template_email_group: data.form.template_email_group,
+    qr_code_field: data.form.qr_code_field,
     schema: (data.form.fields || []).map((field, index) => {
       console.log('FormBlock - Processing field:', field);
       const fieldTranslation = field?.translations?.find(
@@ -114,6 +119,11 @@ const FormBlock = ({ data, lang }: FormBlockComponentProps) => {
         validation: field?.validation || '',
         width: field?.width || '100',
         options: fieldTranslation?.options || [], // For select fields
+        is_required: field?.is_required || false,
+        is_group_field: field?.is_group_field || false,
+        is_email_contact: field?.is_email_contact || false,
+        event_id: field?.event_id,
+        tenant_id: field?.tenant_id,
       };
     }),
     submit_label:

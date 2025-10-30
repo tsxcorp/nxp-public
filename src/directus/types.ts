@@ -228,13 +228,17 @@ export interface Forms {
   fields?: FormField[];
   translations?: FormTranslation[];
   schema?: FormField[];
+  is_allow_group?: boolean;
+  template_email?: string;
+  template_email_group?: string;
+  qr_code_field?: string;
 }
 
 export interface FormField {
   id: string;
   form_id?: string;
   name: string;
-  type: 'input' | 'textarea' | 'select';
+  type: 'input' | 'textarea' | 'select' | 'email' | 'number' | 'multiselect' | 'file' | 'image';
   width?: string;
   validation?: string;
   conditions?: any;
@@ -243,6 +247,11 @@ export interface FormField {
   outerclass?: string;
   options?: Array<{ label: string; value: string }>;
   label?: string;
+  is_required?: boolean;
+  is_group_field?: boolean;
+  is_email_contact?: boolean;
+  event_id?: number;
+  tenant_id?: number;
 }
 
 export interface FormTranslation {
@@ -349,6 +358,10 @@ export interface FormSubmissions {
   user_created?: string | DirectusUsers
   user_updated?: string | DirectusUsers
   status?: 'draft' | 'published' | 'archived'
+  is_lead?: boolean
+  date_started?: string
+  date_sumitted?: string
+  group_id?: string
 }
 
 export interface BlockColumns {

@@ -8,6 +8,10 @@ export interface FormSubmission {
     value: string
   }>
   form: string
+  is_lead?: boolean
+  date_started?: string
+  date_sumitted?: string
+  group_id?: string
 }
 
 export async function POST(req: NextRequest) {
@@ -31,11 +35,26 @@ export async function POST(req: NextRequest) {
     }
 
     // Create the form submission
+    const submissionData: any = {
+      answers,
+      form,
+      status: 'published',
+      date_sumitted: new Date().toISOString()
+    }
+
+          // Add optional fields if provided
+          if (body.is_lead !== undefined) {
+            submissionData.is_lead = body.is_lead
+          }
+          if (body.date_started) {
+            submissionData.date_started = body.date_started
+          }
+          if (body.group_id) {
+            submissionData.group_id = body.group_id
+          }
+
     const response = await directusApi.request(
-      createItem('form_submissions', {
-        answers,
-        form,
-      })
+      createItem('form_submissions', submissionData)
     )
 
     return NextResponse.json(response)
