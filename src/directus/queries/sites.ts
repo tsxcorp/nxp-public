@@ -26,7 +26,7 @@ export const getSite = async (siteSlug: string): Promise<Sites | null> => {
               _eq: siteSlug
             }
           },
-          fields: ['*'],
+          fields: ['*','navigation.type'],
           limit: 1
         }),
         60

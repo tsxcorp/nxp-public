@@ -1,0 +1,34 @@
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  images: {
+    dangerouslyAllowSVG: true, // allow <Image> to show svg.
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+      {
+        protocol: 'http',
+        hostname: '**',
+      },
+    ],
+  },
+  typescript: {
+    // !! WARN !!
+    // Dangerously allow production builds to successfully complete even if
+    // your project has type errors.
+    // !! WARN !!
+    ignoreBuildErrors: false,
+  },
+  eslint: {
+    // Warning: This allows production builds to successfully complete even if
+    // your project has ESLint errors.
+    ignoreDuringBuilds: false,
+  },
+  experimental: {
+    // Enable static exports for better performance
+  },
+}
+
+export default nextConfig;

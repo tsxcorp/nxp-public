@@ -84,7 +84,11 @@ const blockItemFields = [
   },
   { translations: ['*', { faqs: ['*'] }] },
   { button_group: ['*', { buttons: ['*', { translations: ['*'] }] }] },
-  { rows: ['*', { translations: ['*'] }] },
+  { rows: [
+    '*',
+    { image: ['*'] },
+    { translations: ['*'] }
+  ] },
   { steps: ['*', { translations: ['*'] }] },
   { testimonials: [
       '*',
@@ -133,6 +137,9 @@ export const fetchPage = async (siteSlug: string, lang: string, permalink: strin
                     translations: { _filter: { languages_code: { _eq: langCode } } } as any,
                   },
                 },
+                rows: {
+                  translations: { _filter: { languages_code: { _eq: langCode } } } as any,
+                },
               },
             },
           },
@@ -154,6 +161,14 @@ export const fetchPage = async (siteSlug: string, lang: string, permalink: strin
           console.log(`[fetchPage] Block ${index} button_group:`, JSON.stringify(block.item.button_group, null, 2));
           if (block.item.button_group.buttons) {
             console.log(`[fetchPage] Block ${index} buttons:`, JSON.stringify(block.item.button_group.buttons, null, 2));
+          }
+        }
+        if (block.item?.rows) {
+          console.log(`[fetchPage] Block ${index} rows:`, JSON.stringify(block.item.rows, null, 2));
+          if (Array.isArray(block.item.rows)) {
+            block.item.rows.forEach((row: any, rowIndex: number) => {
+              console.log(`[fetchPage] Block ${index} Row ${rowIndex}:`, JSON.stringify(row, null, 2));
+            });
           }
         }
       });

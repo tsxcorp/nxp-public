@@ -106,9 +106,11 @@ const FormBlock = ({ data, lang }: FormBlockComponentProps) => {
       );
       console.log('FormBlock - Field translation:', fieldTranslation);
 
-      // Use field ID as the name to ensure uniqueness
-      const fieldName = field?.id || `field_${index}`;
+      // Use field name if available, otherwise fallback to ID
+      const fieldName = field?.name || field?.id || `field_${index}`;
       
+      console.log(`FormBlock - Mapped field ${fieldName} has ${field?.conditions?.length || 0} conditions`);
+
       return {
         id: field?.id || `field_${index}`,
         name: fieldName,
@@ -124,6 +126,7 @@ const FormBlock = ({ data, lang }: FormBlockComponentProps) => {
         is_email_contact: field?.is_email_contact || false,
         event_id: field?.event_id,
         tenant_id: field?.tenant_id,
+        conditions: field?.conditions || [], // CRITICAL: Pass conditions to VForm
       };
     }),
     submit_label:

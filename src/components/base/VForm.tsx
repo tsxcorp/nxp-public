@@ -1,7 +1,7 @@
 'use client'
 
 import { Forms, FormField } from '@/directus/types'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import VAlert from '@/components/base/VAlert'
 import { useForm } from 'react-hook-form'
 import { ErrorMessage } from '@hookform/error-message'
@@ -11,6 +11,7 @@ import formTheme from '@/form.theme'
 import { useRouter } from '@/lib/navigation'
 import VButton from '@/components/base/VButton'
 import { v4 as uuidv4 } from 'uuid'
+import { useFormConditions } from '@/hooks/use-form-conditions'
 
 interface FormProps {
   form: Forms
@@ -68,7 +69,7 @@ function separateFieldsByGroup(schema: FormField[] = []) {
 
 function VForm(props: FormProps) {
   const { form } = props
-  console.log('VForm - Received form props:', props);
+  console.log('🔴 VForm RENDERING - Schema Length:', form.schema?.length);
 
   const router = useRouter()
 
@@ -77,14 +78,19 @@ function VForm(props: FormProps) {
   const [success, setSuccess] = useState(false)
   const [groupSections, setGroupSections] = useState<number[]>([])
 
-  const schema = transformSchema(form.schema || [])
-  const { leadFields, groupFields } = separateFieldsByGroup(schema)
+  const schema = useMemo(() => transformSchema(form.schema || []), [form.schema])
+  const { leadFields, groupFields } = useMemo(() => separateFieldsByGroup(schema), [schema])
   
   console.log('VForm - Lead fields:', leadFields);
   console.log('VForm - Group fields:', groupFields);
   console.log('VForm - Form allows groups:', form.is_allow_group);
 
   const hookForm = useForm<any>()
+
+  // Logic điều kiện form
+  const { visible, fieldOptions, fieldDisabled, fieldRequired } = useFormConditions(schema as any, hookForm)
+
+  console.log('useFormConditions result:', { visible, fieldDisabled, fieldRequired });
 
   // Add new group section
   const addGroupSection = () => {
@@ -244,6 +250,9 @@ function VForm(props: FormProps) {
   const renderField = (element: any, sectionIndex?: number) => {
     const fieldName = sectionIndex !== undefined ? `group_${sectionIndex}_${element.name}` : element.name
     
+    console.log(`Rendering field: ${element.label} (ID: ${element.id}) with registered name: ${fieldName}`);
+    if (visible[element.id || element.name] === false) return null;
+
     return (
       <div
         key={`${fieldName}-${element.name}`}
@@ -251,11 +260,17 @@ function VForm(props: FormProps) {
       >
         <label className='label' htmlFor={fieldName}>
           <span className='label-text text-gray-900'>{element.label}</span>
-          {element.is_required && <span className='text-red-500 ml-1'>*</span>}
+          {fieldRequired[element.id || element.name] && <span className='text-red-500 ml-1'>*</span>}
         </label>
         <DirectusFormBuilder 
-          element={{...element, name: fieldName}} 
+          element={{
+            ...element, 
+            name: fieldName,
+            options: (fieldOptions[element.id || element.name] || element.options) as any
+          }} 
           hookForm={hookForm} 
+          disabled={fieldDisabled[element.id || element.name]}
+          required={fieldRequired[element.id || element.name]}
         />
         <ErrorMessage
           errors={hookForm.formState.errors}
@@ -290,7 +305,8 @@ function VForm(props: FormProps) {
           <div className='grid gap-6 md:grid-cols-6'>
             {/* Render all fields normally first */}
             {schema.map((element) => {
-              console.log('VForm - Rendering schema element:', element);
+              if (visible[element.id || element.name] === false) return null;
+              
               return (
                 <div
                   key={`fields-${element.name}`}
@@ -298,9 +314,17 @@ function VForm(props: FormProps) {
                 >
                   <label className='label' htmlFor={element.name}>
                     <span className='label-text text-gray-900'>{element.label}</span>
-                    {element.is_required && <span className='text-red-500 ml-1'>*</span>}
+                    {fieldRequired[element.id || element.name] && <span className='text-red-500 ml-1'>*</span>}
                   </label>
-                  <DirectusFormBuilder element={element} hookForm={hookForm} />
+                  <DirectusFormBuilder 
+                    element={{
+                      ...element,
+                      options: (fieldOptions[element.id || element.name] || element.options) as any
+                    }} 
+                    hookForm={hookForm} 
+                    disabled={fieldDisabled[element.id || element.name]}
+                    required={fieldRequired[element.id || element.name]}
+                  />
                   <ErrorMessage
                     errors={hookForm.formState.errors}
                     name={element.name}

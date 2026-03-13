@@ -376,7 +376,7 @@ export interface BlockColumnsRows {
   content?: string
   headline?: string
   id: number
-  image?: string | DirectusFile
+  image?: DirectusFile | string
   image_position?: string
   title?: string
 }

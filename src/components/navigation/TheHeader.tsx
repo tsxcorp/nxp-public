@@ -31,7 +31,7 @@ function getNavigationUrl(item: NavigationItem, currentLang: string, currentPath
   if (item.type === 'page' && typeof item.page !== 'string') {
     // Find translation for current language
     const translation = item.page?.translations?.find(t => 
-      t.languages_code.startsWith(currentLang)
+      t.languages_code?.startsWith(currentLang)
     )
     
     // Use current language translation if available, otherwise fallback to first translation

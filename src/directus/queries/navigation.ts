@@ -59,7 +59,7 @@ export const fetchNavigationSafe = async function name(siteSlug: string, lang: s
   console.log('Requested navigation type:', type);
 
   // Check if the requested navigation type exists in site's navigation array
-  if (!site.navigation?.includes(type)) {
+  if (!site.navigation) {
     console.log('❌ Navigation type not found in site');
     return null;
   }
@@ -75,7 +75,7 @@ export const fetchNavigationSafe = async function name(siteSlug: string, lang: s
       withRevalidate(
         readItems('navigation' as any, {
           filter: {
-            site_id: {
+            site: {
               _eq: site.id
             },
             type: {

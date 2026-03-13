@@ -41,6 +41,8 @@ function ColumnsBlock({ data, lang }: ColumnsBlockProps) {
   const title = translation?.title || data.title || ''
   const headline = translation?.headline || data.headline || ''
 
+  console.log('data:: ', data)
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const bodyStyles = window.getComputedStyle(document.body)
@@ -128,7 +130,7 @@ function ColumnsBlock({ data, lang }: ColumnsBlockProps) {
                           width={800}
                           height={800}
                           alt=''
-                          src={getDirectusMedia(row.image)}
+                          src={getDirectusMedia(typeof row.image === 'string' ? row.image : row.image?.id)}
                         />
                       )}
                     </div>
